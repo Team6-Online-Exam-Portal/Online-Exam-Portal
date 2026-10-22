@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Until the Django scaffold (SETUP-01) is merged there is nothing to test,
+      # so this job passes without running the Django steps.
+      - name: Check for Django project
+        id: django
+        run: |
+          if [ -f Source-Code/manage.py ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "No Django project yet - skipping tests."
+          fi
+
+      - uses: actions/setup-python@v5
+        if: steps.django.outputs.exists == 'true'
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        if: steps.django.outputs.exists == 'true'
+        run: pip install -r Source-Code/requirements.txt
+
+      - name: Django system check
+        if: steps.django.outputs.exists == 'true'
+        working-directory: Source-Code
+        run: python manage.py check
+
+      - name: Run tests
+        if: steps.django.outputs.exists == 'true'
+        working-directory: Source-Code
+        run: python manage.py test
