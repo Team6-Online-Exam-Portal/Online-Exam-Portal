@@ -1,7 +1,11 @@
 from datetime import timedelta
 
+from decimal import Decimal
+from time import perf_counter
+from unittest import mock
+
 from django.contrib.auth import get_user_model
-from django.db import IntegrityError, transaction
+from django.db import DatabaseError, IntegrityError, transaction
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -297,14 +301,22 @@ class AttemptPageTests(AttemptTestBase):
             started_at=timezone.now() - timedelta(minutes=45)
         )
         resp = self.client.get(self.url, follow=True)
-        self.assertContains(resp, "Time is over")
+        self.assertContains(resp, "Time is up")
+        self.attempt.refresh_from_db()
+        self.assertTrue(self.attempt.is_submitted)
 
-    def test_submitted_attempt_page_is_not_shown(self):
+    def test_submitted_attempt_page_goes_to_result(self):
         Attempt.objects.filter(pk=self.attempt.pk).update(
             submitted_at=timezone.now()
         )
         resp = self.client.get(self.url)
-        self.assertRedirects(resp, reverse("student_dashboard"))
+        self.assertRedirects(
+            resp, reverse("attempt_result", args=[self.attempt.id])
+        )
+
+    def test_attempt_page_is_not_cached(self):
+        resp = self.client.get(self.url)
+        self.assertIn("no-store", resp["Cache-Control"])
 
     def test_anonymous_redirected_to_login(self):
         self.client.logout()
@@ -403,3 +415,309 @@ class SaveAnswerTests(AttemptTestBase):
 
     def test_get_not_allowed(self):
         self.assertEqual(self.client.get(self.url).status_code, 405)
+
+
+# ----------------------------------------------------------------- FR-6 ----
+
+class EvaluationTests(AttemptTestBase):
+    """Scoring rules: full marks per correct answer, no negative marking."""
+
+    def attempt_with(self, exam, picks):
+        """picks: {order: 'right' | 'wrong' | None}; absent = untouched."""
+        attempt = Attempt.objects.create(student=self.student, exam=exam)
+        for order, pick in picks.items():
+            eq = self.eq(exam, order)
+            option = None
+            if pick == "right":
+                option = self.option(eq, correct=True)
+            elif pick == "wrong":
+                option = self.option(eq, correct=False)
+            Response.objects.create(
+                attempt=attempt, exam_question=eq, selected_option=option
+            )
+        return attempt
+
+    def test_all_correct_gets_full_marks(self):
+        exam = self.make_exam(questions=3, marks=2)
+        attempt = self.attempt_with(
+            exam, {1: "right", 2: "right", 3: "right"}
+        )
+        done = services.evaluate_and_submit(attempt)
+        self.assertEqual(done.score, 6)
+        self.assertEqual(done.percentage, Decimal("100.00"))
+        self.assertIsNotNone(done.submitted_at)
+
+    def test_mixed_answers_score_only_correct_ones(self):
+        exam = self.make_exam(questions=3, marks=2)
+        attempt = self.attempt_with(exam, {1: "right", 2: "wrong", 3: None})
+        done = services.evaluate_and_submit(attempt)
+        self.assertEqual(done.score, 2)
+        self.assertEqual(done.percentage, Decimal("33.33"))
+
+    def test_no_negative_marking(self):
+        exam = self.make_exam(questions=3, marks=2)
+        attempt = self.attempt_with(
+            exam, {1: "wrong", 2: "wrong", 3: "wrong"}
+        )
+        self.assertEqual(services.evaluate_and_submit(attempt).score, 0)
+
+    def test_unanswered_questions_without_rows_score_zero(self):
+        exam = self.make_exam(questions=3, marks=2)
+        attempt = self.attempt_with(exam, {})
+        done = services.evaluate_and_submit(attempt)
+        self.assertEqual(done.score, 0)
+        self.assertEqual(done.percentage, Decimal("0.00"))
+
+    def test_each_question_uses_its_own_marks(self):
+        exam = self.make_exam(questions=2, marks=1)
+        ExamQuestion.objects.filter(pk=self.eq(exam, 2).pk).update(marks=5)
+        attempt = self.attempt_with(exam, {1: "wrong", 2: "right"})
+        done = services.evaluate_and_submit(attempt)
+        self.assertEqual(done.score, 5)
+        self.assertEqual(done.percentage, Decimal("83.33"))
+
+    def test_response_flags_are_stored(self):
+        exam = self.make_exam(questions=2)
+        attempt = self.attempt_with(exam, {1: "right", 2: "wrong"})
+        services.evaluate_and_submit(attempt)
+        flags = {
+            r.exam_question.order: r.is_correct
+            for r in attempt.responses.select_related("exam_question")
+        }
+        self.assertEqual(flags, {1: True, 2: False})
+
+    def test_percentage_rounding_and_zero_total(self):
+        self.assertEqual(
+            services.calculate_percentage(1, 3), Decimal("33.33")
+        )
+        self.assertEqual(
+            services.calculate_percentage(2, 3), Decimal("66.67")
+        )
+        self.assertEqual(services.calculate_percentage(0, 0), Decimal("0.00"))
+
+    def test_pass_mark_is_40_percent(self):
+        self.assertTrue(services.is_pass(Decimal("40.00")))
+        self.assertFalse(services.is_pass(Decimal("39.99")))
+
+    def test_evaluation_happens_exactly_once(self):
+        exam = self.make_exam(questions=2, marks=1)
+        attempt = self.attempt_with(exam, {1: "right"})
+        first = services.evaluate_and_submit(attempt)
+        stamp = first.submitted_at
+        # Tamper after submission, then evaluate again.
+        Response.objects.filter(attempt=attempt).update(selected_option=None)
+        again = services.evaluate_and_submit(attempt)
+        self.assertEqual(again.score, 1)
+        self.assertEqual(again.submitted_at, stamp)
+
+    def test_late_evaluation_is_stamped_at_deadline(self):
+        exam = self.make_exam()
+        attempt = Attempt.objects.create(student=self.student, exam=exam)
+        late = attempt.deadline + timedelta(minutes=10)
+        done = services.evaluate_and_submit(attempt, now=late)
+        self.assertEqual(done.submitted_at, attempt.deadline)
+
+    def test_fifty_question_exam_evaluates_within_two_seconds(self):
+        exam = self.make_exam(questions=50, marks=1, end_offset=120)
+        picks = {n: "right" for n in range(1, 51)}
+        attempt = self.attempt_with(exam, picks)
+        started = perf_counter()
+        done = services.evaluate_and_submit(attempt)
+        self.assertLess(perf_counter() - started, 2.0)
+        self.assertEqual(done.score, 50)
+
+
+class SubmitFlowTests(AttemptTestBase):
+    def setUp(self):
+        self.exam = self.make_exam(questions=5, marks=1)
+        self.attempt = Attempt.objects.create(
+            student=self.student, exam=self.exam
+        )
+        self.submit_url = reverse("attempt_submit", args=[self.attempt.id])
+        self.result_url = reverse("attempt_result", args=[self.attempt.id])
+        self.login()
+
+    def pick(self, order, correct):
+        eq = self.eq(self.exam, order)
+        Response.objects.update_or_create(
+            attempt=self.attempt,
+            exam_question=eq,
+            defaults={"selected_option": self.option(eq, correct=correct)},
+        )
+
+    def test_confirmation_page_shows_unanswered_count(self):
+        self.pick(1, True)
+        self.pick(2, False)
+        resp = self.client.get(self.submit_url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, "3 unanswered questions")
+        self.attempt.refresh_from_db()
+        self.assertFalse(self.attempt.is_submitted)  # GET never submits
+
+    def test_confirmation_page_when_all_answered(self):
+        for n in range(1, 6):
+            self.pick(n, True)
+        resp = self.client.get(self.submit_url)
+        self.assertContains(resp, "answered all 5 questions")
+
+    def test_manual_submit_scores_and_opens_result(self):
+        for n in (1, 2):
+            self.pick(n, True)
+        self.pick(3, False)
+        resp = self.client.post(self.submit_url)
+        self.assertRedirects(resp, self.result_url)
+        self.attempt.refresh_from_db()
+        self.assertTrue(self.attempt.is_submitted)
+        self.assertEqual(self.attempt.score, 2)
+        self.assertEqual(self.attempt.percentage, Decimal("40.00"))
+
+    def test_result_page_shows_score_percentage_and_pass(self):
+        for n in (1, 2):
+            self.pick(n, True)
+        self.client.post(self.submit_url)
+        resp = self.client.get(self.result_url)
+        self.assertContains(resp, "2 / 5")
+        self.assertContains(resp, "40.00%")
+        self.assertContains(resp, "Pass")
+
+    def test_result_page_shows_fail_below_pass_mark(self):
+        self.pick(1, True)
+        self.client.post(self.submit_url)
+        resp = self.client.get(self.result_url)
+        self.assertContains(resp, "20.00%")
+        self.assertContains(resp, "Fail")
+
+    def test_double_submit_does_not_rescore(self):
+        self.pick(1, True)
+        self.client.post(self.submit_url)
+        self.attempt.refresh_from_db()
+        stamp, score = self.attempt.submitted_at, self.attempt.score
+        resp = self.client.post(self.submit_url)
+        self.assertRedirects(resp, self.result_url)
+        self.attempt.refresh_from_db()
+        self.assertEqual(
+            (self.attempt.submitted_at, self.attempt.score), (stamp, score)
+        )
+
+    def test_back_or_reload_cannot_reopen_a_submitted_attempt(self):
+        self.client.post(self.submit_url)
+        page = self.client.get(
+            reverse("attempt_page", args=[self.attempt.id])
+        )
+        self.assertRedirects(page, self.result_url)
+
+    def test_answers_are_locked_after_submission(self):
+        self.pick(1, True)
+        self.client.post(self.submit_url)
+        eq = self.eq(self.exam, 2)
+        resp = self.client.post(
+            reverse("attempt_answer", args=[self.attempt.id]),
+            {"question": eq.id, "option": self.option(eq, True).id},
+        )
+        self.assertEqual(resp.status_code, 403)
+        self.attempt.refresh_from_db()
+        self.assertEqual(self.attempt.score, 1)
+        self.assertEqual(self.attempt.responses.count(), 1)
+
+    def test_timer_zero_auto_submits_saved_answers(self):
+        self.pick(1, True)
+        self.pick(2, True)
+        Attempt.objects.filter(pk=self.attempt.pk).update(
+            started_at=timezone.now() - timedelta(minutes=31)
+        )
+        resp = self.client.post(self.submit_url, follow=True)
+        self.assertRedirects(resp, self.result_url)
+        self.assertContains(resp, "submitted automatically")
+        self.attempt.refresh_from_db()
+        self.assertEqual(self.attempt.score, 2)
+        self.assertEqual(self.attempt.submitted_at, self.attempt.deadline)
+
+    def test_answer_after_deadline_is_rejected_and_not_scored(self):
+        self.pick(1, True)
+        Attempt.objects.filter(pk=self.attempt.pk).update(
+            started_at=timezone.now() - timedelta(minutes=31)
+        )
+        eq = self.eq(self.exam, 2)
+        resp = self.client.post(
+            reverse("attempt_answer", args=[self.attempt.id]),
+            {"question": eq.id, "option": self.option(eq, True).id},
+        )
+        self.assertEqual(resp.status_code, 403)
+        self.attempt.refresh_from_db()
+        self.assertEqual(self.attempt.score, 1)
+
+    def test_abandoned_attempt_is_scored_when_dashboard_is_opened(self):
+        self.pick(1, True)
+        Attempt.objects.filter(pk=self.attempt.pk).update(
+            started_at=timezone.now() - timedelta(minutes=45)
+        )
+        resp = self.client.get(reverse("student_dashboard"))
+        self.assertContains(resp, "Completed")
+        self.assertContains(resp, "View result")
+        self.attempt.refresh_from_db()
+        self.assertTrue(self.attempt.is_submitted)
+        self.assertEqual(self.attempt.score, 1)
+
+    def test_abandoned_attempt_cannot_be_restarted(self):
+        Attempt.objects.filter(pk=self.attempt.pk).update(
+            started_at=timezone.now() - timedelta(minutes=45)
+        )
+        resp = self.client.post(
+            reverse("exam_start", args=[self.exam.id]), follow=True
+        )
+        self.assertContains(resp, "already attempted")
+        self.assertEqual(Attempt.objects.count(), 1)
+
+    def test_no_result_for_unsubmitted_attempt(self):
+        resp = self.client.get(self.result_url)
+        self.assertRedirects(
+            resp, reverse("attempt_page", args=[self.attempt.id])
+        )
+        resp = self.client.get(self.result_url, follow=True)
+        self.assertContains(resp, "not been submitted")
+
+    def test_failed_save_keeps_attempt_open_and_retry_works(self):
+        self.pick(1, True)
+        with mock.patch.object(
+            services, "evaluate_and_submit", side_effect=DatabaseError("boom")
+        ), self.assertLogs("attempts.views", level="ERROR"):
+            resp = self.client.post(self.submit_url, follow=True)
+        self.assertContains(resp, "could not be saved")
+        self.attempt.refresh_from_db()
+        self.assertFalse(self.attempt.is_submitted)
+        self.assertEqual(self.attempt.score, 0)
+        # Retry without the failure
+        resp = self.client.post(self.submit_url)
+        self.assertRedirects(resp, self.result_url)
+        self.attempt.refresh_from_db()
+        self.assertEqual(self.attempt.score, 1)
+
+    def test_other_student_cannot_submit_or_view_result(self):
+        self.login(self.other)
+        self.assertEqual(self.client.get(self.submit_url).status_code, 403)
+        self.assertEqual(self.client.post(self.submit_url).status_code, 403)
+        self.assertEqual(self.client.get(self.result_url).status_code, 403)
+        self.attempt.refresh_from_db()
+        self.assertFalse(self.attempt.is_submitted)
+
+    def test_instructor_cannot_submit_or_view_result(self):
+        self.login(self.instructor)
+        self.assertEqual(self.client.post(self.submit_url).status_code, 403)
+        self.assertEqual(self.client.get(self.result_url).status_code, 403)
+
+    def test_anonymous_is_sent_to_login(self):
+        self.client.logout()
+        for url in (self.submit_url, self.result_url):
+            resp = self.client.get(url)
+            self.assertEqual(resp.status_code, 302)
+            self.assertIn(reverse("login"), resp.url)
+
+    def test_put_not_allowed_on_submit(self):
+        self.assertEqual(self.client.put(self.submit_url).status_code, 405)
+
+    def test_attempt_page_has_submit_button_and_auto_submit_form(self):
+        resp = self.client.get(
+            reverse("attempt_page", args=[self.attempt.id])
+        )
+        self.assertContains(resp, 'id="submit-btn"')
+        self.assertContains(resp, 'id="auto-submit-form"')
