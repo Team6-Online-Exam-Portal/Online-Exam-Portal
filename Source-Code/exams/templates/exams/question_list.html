@@ -1,0 +1,68 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My MCQ Questions</title>
+</head>
+<body>
+    <h1>My MCQ Questions</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <p>
+        <a href="{% url 'instructor_dashboard' %}">Back to Dashboard</a>
+    </p>
+
+    <p>
+        <a href="{% url 'question_create' %}">Create New Question</a>
+    </p>
+
+    {% if questions %}
+        <table border="1" cellpadding="8">
+            <thead>
+                <tr>
+                    <th>Question</th>
+                    <th>Options</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for question in questions %}
+                    <tr>
+                        <td>{{ question.question_text }}</td>
+                        <td>
+                            <ol>
+                                {% for option in question.options.all %}
+                                    <li>
+                                        {{ option.option_text }}
+                                        {% if option.is_correct %}
+                                            (Correct answer)
+                                        {% endif %}
+                                    </li>
+                                {% endfor %}
+                            </ol>
+                        </td>
+                        <td>
+                            <a href="{% url 'question_update' question.pk %}">
+                                Edit
+                            </a>
+                            |
+                            <a href="{% url 'question_delete' question.pk %}">
+                                Delete
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>You haven't created any questions yet.</p>
+    {% endif %}
+</body>
+</html>
