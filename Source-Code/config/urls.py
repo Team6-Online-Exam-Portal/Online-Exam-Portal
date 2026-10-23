@@ -1,18 +1,22 @@
+
 from django.contrib import admin
-from django.http import HttpResponse
 from django.urls import path
 from accounts import views as account_views
-
-
-def login_placeholder(request):
-    return HttpResponse(
-        "Login page will be implemented in FR-2.",
-        content_type="text/plain",
-    )
-
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("register/", account_views.register, name="register"),
-    path("login/", login_placeholder, name="login"),
+    path("login/", account_views.login_view, name="login"),
+    path("logout/", account_views.logout_view, name="logout"),
+    path("dashboard/", account_views.dashboard, name="dashboard"),
+    path(
+        "student/dashboard/",
+        account_views.student_dashboard,
+        name="student_dashboard",
+    ),
+    path(
+        "instructor/dashboard/",
+        account_views.instructor_dashboard,
+        name="instructor_dashboard",
+    ),
 ]

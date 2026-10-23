@@ -1,0 +1,23 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard | Online Exam Portal</title>
+</head>
+<body>
+    <main>
+        <h1>Student Dashboard</h1>
+        <p>Welcome, {{ request.user.username }}!</p>
+        <p>Email: {{ request.user.email }}</p>
+        <p>Here you will be able to view and attempt scheduled exams.</p>
+
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+        </form>
+    </main>
+</body>
+</html>
+
