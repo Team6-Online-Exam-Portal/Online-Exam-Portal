@@ -1,6 +1,6 @@
 
 from django.contrib import admin
-from django.urls import path
+from django.urls import include, path
 from accounts import views as account_views
 
 urlpatterns = [
@@ -19,4 +19,5 @@ urlpatterns = [
         account_views.instructor_dashboard,
         name="instructor_dashboard",
     ),
+    path("", include("attempts.urls")),
 ]

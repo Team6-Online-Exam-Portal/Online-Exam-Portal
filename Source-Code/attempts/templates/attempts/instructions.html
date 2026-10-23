@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}{{ exam.title }} | Instructions{% endblock %}
+
+{% block content %}
+<h2>{{ exam.title }}</h2>
+{% if exam.description %}<p>{{ exam.description }}</p>{% endif %}
+
+<h3>Instructions</h3>
+<ul>
+    <li>Duration: {{ exam.duration_minutes }} minutes</li>
+    <li>Number of questions: {{ question_count }}</li>
+    <li>Total marks: {{ total_marks }}</li>
+    <li>Exam window: {{ exam.start_time|date:"d M Y, H:i" }} to {{ exam.end_time|date:"d M Y, H:i" }}</li>
+    <li>Status: {{ status }}</li>
+</ul>
+<p>
+    The timer starts when you press the button below and cannot be paused.
+    You can attempt this exam only once. You may change answers or leave
+    questions unanswered before the time runs out.
+</p>
+
+{% if can_start %}
+<form method="post" action="{% url 'exam_start' exam.id %}">
+    {% csrf_token %}
+    <button type="submit">{% if resuming %}Resume exam{% else %}Start exam{% endif %}</button>
+</form>
+{% else %}
+<p>This exam cannot be started right now ({{ status }}).</p>
+{% endif %}
+
+<p><a href="{% url 'student_dashboard' %}">Back to dashboard</a></p>
+{% endblock %}
