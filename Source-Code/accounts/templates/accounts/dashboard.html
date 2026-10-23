@@ -1,0 +1,31 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | Online Exam Portal</title>
+</head>
+<body>
+    <main>
+        <h1>Welcome, {{ request.user.username }}!</h1>
+
+        <p>Email: {{ request.user.email }}</p>
+        <p>Role: {{ request.user.get_role_display }}</p>
+
+        {% if request.user.role == "STUDENT" %}
+            <h2>Student Dashboard</h2>
+            <p>View and attempt your scheduled exams here.</p>
+        {% elif request.user.role == "INSTRUCTOR" %}
+            <h2>Instructor Dashboard</h2>
+            <p>Create and manage your exams here.</p>
+        {% endif %}
+
+        <form method="post" action="{% url 'logout' %}">
+            {% csrf_token %}
+            <button type="submit">Logout</button>
+        </form>
+    </main>
+</body>
+</html>
+
