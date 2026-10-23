@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}{{ exam.title }} | Attempt{% endblock %}
+
+{% block extra_head %}
+<style>
+    .question { display: none; }
+    .question.active { display: block; }
+    .opt { display: block; margin: 8px 0; }
+    #navigator { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
+    .nav-btn { min-width: 40px; min-height: 40px; }
+    .nav-btn.answered { background: #cfe8cf; }
+    .nav-btn.current { outline: 3px solid #333; }
+    #timer { font-size: 1.4em; }
+    #timer.low { color: #b00020; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div id="attempt"
+     data-remaining="{{ remaining_seconds }}"
+     data-answer-url="{% url 'attempt_answer' attempt.id %}"
+     data-csrf="{{ csrf_token }}">
+
+    <h2>{{ exam.title }}</h2>
+    <p>Time left: <strong id="timer" aria-live="off">--:--</strong></p>
+    <p>Answered: <span id="answered-count">{{ answered_count }}</span> / {{ questions|length }}</p>
+    <p id="save-status" role="status"></p>
+
+    <div id="navigator" aria-label="Question navigator">
+        {% for q in questions %}
+        <button type="button" class="nav-btn{% if q.selected %} answered{% endif %}" data-index="{{ forloop.counter0 }}">{{ q.number }}</button>
+        {% endfor %}
+    </div>
+
+    {% for q in questions %}
+    <section class="question{% if forloop.first %} active{% endif %}" data-id="{{ q.id }}">
+        <h3>Question {{ q.number }} of {{ questions|length }} ({{ q.marks }} mark{{ q.marks|pluralize }})</h3>
+        <p>{{ q.text }}</p>
+        {% for o in q.options %}
+        <label class="opt">
+            <input type="radio" name="q{{ q.id }}" value="{{ o.id }}"{% if q.selected == o.id %} checked{% endif %}>
+            {{ o.text }}
+        </label>
+        {% endfor %}
+        <button type="button" class="clear-btn">Clear answer</button>
+    </section>
+    {% endfor %}
+
+    <p>
+        <button type="button" id="prev-btn">Previous</button>
+        <button type="button" id="next-btn">Next</button>
+    </p>
+</div>
+
+<script>
+(function () {
+    var root = document.getElementById('attempt');
+    var panels = Array.prototype.slice.call(document.querySelectorAll('.question'));
+    var navBtns = Array.prototype.slice.call(document.querySelectorAll('.nav-btn'));
+    var timerEl = document.getElementById('timer');
+    var statusEl = document.getElementById('save-status');
+    var countEl = document.getElementById('answered-count');
+    var current = 0;
+
+    function show(i) {
+        current = Math.max(0, Math.min(panels.length - 1, i));
+        panels.forEach(function (p, idx) { p.classList.toggle('active', idx === current); });
+        navBtns.forEach(function (b, idx) { b.classList.toggle('current', idx === current); });
+    }
+    navBtns.forEach(function (b) {
+        b.addEventListener('click', function () { show(parseInt(b.dataset.index, 10)); });
+    });
+    document.getElementById('prev-btn').addEventListener('click', function () { show(current - 1); });
+    document.getElementById('next-btn').addEventListener('click', function () { show(current + 1); });
+    show(0);
+
+    // Countdown: starts from the remaining time computed by the server and
+    // uses a monotonic clock, so the browser's own clock is never trusted.
+    var endAt = performance.now() + parseInt(root.dataset.remaining, 10) * 1000;
+    function onTimeUp() {
+        window.location.reload();
+    }
+    function tick() {
+        var left = Math.max(0, Math.round((endAt - performance.now()) / 1000));
+        var m = Math.floor(left / 60), s = left % 60;
+        timerEl.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        timerEl.classList.toggle('low', left <= 60);
+        if (left <= 0) { clearInterval(timerId); onTimeUp(); }
+    }
+    var timerId = setInterval(tick, 500);
+    tick();
+
+    function save(panelIndex, optionId) {
+        var body = new URLSearchParams({
+            question: panels[panelIndex].dataset.id,
+            option: optionId || ''
+        });
+        statusEl.textContent = 'Saving...';
+        fetch(root.dataset.answerUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': root.dataset.csrf,
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: body
+        }).then(function (resp) {
+            return resp.json().then(function (data) { return { ok: resp.ok, data: data }; });
+        }).then(function (result) {
+            if (!result.ok) { throw new Error(result.data.error || 'Could not save'); }
+            navBtns[panelIndex].classList.toggle('answered', !!optionId);
+            countEl.textContent = result.data.answered;
+            statusEl.textContent = 'Saved.';
+        }).catch(function (err) {
+            statusEl.textContent = 'Could not save your answer: ' + err.message + ' Please select it again.';
+        });
+    }
+
+    panels.forEach(function (panel, idx) {
+        panel.addEventListener('change', function (e) {
+            if (e.target && e.target.type === 'radio') { save(idx, e.target.value); }
+        });
+        panel.querySelector('.clear-btn').addEventListener('click', function () {
+            panel.querySelectorAll('input[type=radio]').forEach(function (r) { r.checked = false; });
+            save(idx, '');
+        });
+    });
+})();
+</script>
+{% endblock %}
