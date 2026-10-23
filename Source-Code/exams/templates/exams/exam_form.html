@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if exam %}Edit Exam{% else %}Create Exam{% endif %}</title>
+</head>
+<body>
+    <h1>{% if exam %}Edit Exam{% else %}Create Exam{% endif %}</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.non_field_errors }}
+
+        <p>
+            {{ form.title.label_tag }}<br>
+            {{ form.title }}
+            {{ form.title.errors }}
+        </p>
+
+        <p>
+            {{ form.description.label_tag }}<br>
+            {{ form.description }}
+            {{ form.description.errors }}
+        </p>
+
+        <p>
+            {{ form.start_time.label_tag }}<br>
+            {{ form.start_time }}
+            {{ form.start_time.errors }}
+        </p>
+
+        <p>
+            {{ form.end_time.label_tag }}<br>
+            {{ form.end_time }}
+            {{ form.end_time.errors }}
+        </p>
+
+        <p>
+            {{ form.duration_minutes.label_tag }}<br>
+            {{ form.duration_minutes }}
+            {{ form.duration_minutes.errors }}
+        </p>
+
+        <p>
+            <strong>Select Questions:</strong><br>
+            {{ form.questions }}
+            {{ form.questions.errors }}
+            {{ form.questions.help_text }}
+        </p>
+
+        <button type="submit">Save Exam as Draft</button>
+    </form>
+
+    <p><a href="{% url 'exam_list' %}">Back to Exam List</a></p>
+</body>
+</html>
