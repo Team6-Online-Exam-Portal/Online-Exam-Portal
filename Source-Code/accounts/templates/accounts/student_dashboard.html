@@ -37,6 +37,8 @@
                     <a href="{% url 'exam_instructions' row.exam.id %}">
                         {% if row.attempt %}Resume{% else %}Start{% endif %}
                     </a>
+                {% elif row.status == "Completed" %}
+                    <a href="{% url 'attempt_result' row.attempt.id %}">View result</a>
                 {% elif row.status == "Upcoming" %}
                     <a href="{% url 'exam_instructions' row.exam.id %}">View details</a>
                 {% endif %}
