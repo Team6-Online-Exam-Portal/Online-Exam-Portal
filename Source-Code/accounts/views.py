@@ -1,3 +1,76 @@
-from django.shortcuts import render
+from django import forms
+from django.contrib import messages
+from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.db import IntegrityError, transaction
+from django.shortcuts import render, redirect
 
-# Create your views here.
+User = get_user_model()
+
+
+class RegistrationForm(forms.Form):
+    username = forms.CharField(max_length=150)
+    email = forms.EmailField()
+    password1 = forms.CharField(
+        label="Password",
+        widget=forms.PasswordInput,
+        min_length=8,
+    )
+    password2 = forms.CharField(
+        label="Confirm password",
+        widget=forms.PasswordInput,
+    )
+
+    def clean_email(self):
+        email = self.cleaned_data["email"].strip()
+        if User.objects.filter(email__iexact=email).exists():
+            raise forms.ValidationError(
+                "An account with this email already exists."
+            )
+        return email
+
+    def clean(self):
+        cleaned_data = super().clean()
+        password1 = cleaned_data.get("password1")
+        password2 = cleaned_data.get("password2")
+
+        if password1 and password2 and password1 != password2:
+            self.add_error("password2", "Passwords do not match.")
+
+        if password1:
+            try:
+                validate_password(password1)
+            except ValidationError as error:
+                self.add_error("password1", error)
+
+        return cleaned_data
+
+
+def register(request):
+    if request.method == "POST":
+        form = RegistrationForm(request.POST)
+
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    User.objects.create_user(
+                        username=form.cleaned_data["username"],
+                        email=form.cleaned_data["email"],
+                        password=form.cleaned_data["password1"],
+                        role=User.Role.STUDENT,
+                    )
+                messages.success(
+                    request,
+                    "Registration successful. You can now log in.",
+                )
+                return redirect("login")
+            except IntegrityError:
+                form.add_error(
+                    "email",
+                    "An account with these details already exists.",
+                )
+    else:
+        form = RegistrationForm()
+
+    return render(request, "accounts/register.html", {"form": form})
