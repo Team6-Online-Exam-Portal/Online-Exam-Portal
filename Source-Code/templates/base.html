@@ -1,0 +1,28 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Online Exam Portal{% endblock %}</title>
+</head>
+<body>
+    <header>
+        <h1>Online Exam Portal</h1>
+        {% if user.is_authenticated %}
+            <p>Logged in as {{ user.username }}</p>
+            <a href="{% url 'logout' %}">Logout</a>
+        {% endif %}
+    </header>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+</body>
+</html>
