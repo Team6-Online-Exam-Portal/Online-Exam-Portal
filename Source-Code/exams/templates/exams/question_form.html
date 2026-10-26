@@ -1,0 +1,55 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if form.instance.pk %}Edit{% else %}Create{% endif %} MCQ Question</title>
+</head>
+<body>
+    <h1>
+        {% if form.instance.pk %}
+            Edit MCQ Question
+        {% else %}
+            Create MCQ Question
+        {% endif %}
+    </h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <form method="post">
+        {% csrf_token %}
+
+        {{ form.as_p }}
+
+        <h2>Answer Options</h2>
+        {{ option_formset.management_form }}
+
+        {% if option_formset.non_form_errors %}
+            <div>
+                {{ option_formset.non_form_errors }}
+            </div>
+        {% endif %}
+
+        {% for option_form in option_formset %}
+            <fieldset>
+                <legend>Option {{ forloop.counter }}</legend>
+                {{ option_form.as_p }}
+                {% for hidden in option_form.hidden_fields %}
+                    {{ hidden }}
+                {% endfor %}
+            </fieldset>
+        {% endfor %}
+
+        <button type="submit">Save Question</button>
+    </form>
+
+    <p>
+        <a href="{% url 'question_list' %}">Cancel and return to questions</a>
+    </p>
+</body>
+</html>
