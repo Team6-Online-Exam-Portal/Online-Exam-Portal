@@ -1,0 +1,43 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Exams</title>
+</head>
+<body>
+    <h1>Available Exams</h1>
+
+    {% if exams %}
+        <table border="1" cellpadding="8">
+            <thead>
+                <tr>
+                    <th>Exam Title</th>
+                    <th>Description</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Duration (minutes)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exam in exams %}
+                    <tr>
+                        <td>{{ exam.title }}</td>
+                        <td>{{ exam.description|default:"No description" }}</td>
+                        <td>{{ exam.start_time }}</td>
+                        <td>{{ exam.end_time }}</td>
+                        <td>{{ exam.duration_minutes }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No upcoming published exams are available.</p>
+    {% endif %}
+
+    <p>
+        <a href="{% url 'student_dashboard' %}">Back to Dashboard</a>
+    </p>
+</body>
+</html>
