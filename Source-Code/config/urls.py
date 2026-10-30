@@ -24,6 +24,6 @@ urlpatterns = [
         name="instructor_dashboard",
     ),
 
-    # Exam management and student exam URLs
+    # FR-3 and FR-4: Question and Exam Management
     path("", include("exams.urls")),
 ]
