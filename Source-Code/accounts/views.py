@@ -136,7 +136,13 @@ def role_required(*allowed_roles):
 
 @role_required(User.Role.STUDENT)
 def student_dashboard(request):
-    return render(request, "accounts/student_dashboard.html")
+    from attempts.services import dashboard_rows
+
+    return render(
+        request,
+        "accounts/student_dashboard.html",
+        {"rows": dashboard_rows(request.user)},
+    )
 
 
 @role_required(User.Role.INSTRUCTOR)
