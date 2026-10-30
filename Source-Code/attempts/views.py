@@ -1,16 +1,21 @@
+import logging
+
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
-from django.db import IntegrityError, transaction
+from django.db import DatabaseError, IntegrityError, transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.views.decorators.http import require_POST
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_http_methods, require_POST
 
 from accounts.decorators import student_required
 from exams.models import Exam, Option
 
 from . import services
 from .models import Attempt, Response
+
+logger = logging.getLogger(__name__)
 
 
 def _own_attempt(request, attempt_id):
@@ -27,6 +32,8 @@ def _own_attempt(request, attempt_id):
 def exam_instructions(request, exam_id):
     exam = get_object_or_404(Exam, pk=exam_id, is_published=True)
     attempt = Attempt.objects.filter(student=request.user, exam=exam).first()
+    if attempt is not None:
+        attempt = services.finalize_if_expired(attempt)
     status = services.exam_status(exam, attempt)
     return render(
         request,
@@ -64,15 +71,17 @@ def exam_start(request, exam_id):
 
 
 @student_required
+@never_cache  # Back button must reload the page, not show a stale form
 def attempt_page(request, attempt_id):
     attempt = _own_attempt(request, attempt_id)
-    if attempt.is_submitted:
-        messages.info(request, "This attempt has already been submitted.")
-        return redirect("student_dashboard")
     now = timezone.now()
-    if now >= attempt.deadline:
-        messages.error(request, "Time is over for this exam.")
-        return redirect("student_dashboard")
+    if not attempt.is_submitted and now >= attempt.deadline:
+        attempt = services.finalize_if_expired(attempt, now)
+        messages.warning(
+            request, "Time is up. Your exam was submitted automatically."
+        )
+    if attempt.is_submitted:
+        return redirect("attempt_result", attempt_id=attempt.id)
 
     selected = {
         r.exam_question_id: r.selected_option_id
@@ -118,7 +127,9 @@ def save_answer(request, attempt_id):
     attempt = _own_attempt(request, attempt_id)
     if attempt.is_submitted:
         return JsonResponse({"error": "Attempt already submitted."}, status=403)
-    if timezone.now() >= attempt.deadline:
+    now = timezone.now()
+    if now >= attempt.deadline:
+        services.finalize_if_expired(attempt, now)
         return JsonResponse({"error": "The deadline has passed."}, status=403)
 
     try:
@@ -149,3 +160,68 @@ def save_answer(request, attempt_id):
         )
     answered = attempt.responses.filter(selected_option__isnull=False).count()
     return JsonResponse({"ok": True, "answered": answered})
+
+
+@student_required
+@require_http_methods(["GET", "POST"])
+def attempt_submit(request, attempt_id):
+    """GET shows the confirmation page; POST submits and evaluates."""
+    attempt = _own_attempt(request, attempt_id)
+    now = timezone.now()
+    timed_out = not attempt.is_submitted and now >= attempt.deadline
+
+    if timed_out:
+        # Timer reached zero: submit what was saved, no confirmation needed.
+        attempt = services.finalize_if_expired(attempt, now)
+        messages.warning(
+            request, "Time is up. Your exam was submitted automatically."
+        )
+    if attempt.is_submitted:
+        return redirect("attempt_result", attempt_id=attempt.id)
+
+    if request.method == "GET":
+        return render(
+            request,
+            "attempts/confirm_submit.html",
+            {
+                "attempt": attempt,
+                "exam": attempt.exam,
+                "unanswered": services.unanswered_count(attempt),
+                "total_questions": services.question_count(attempt.exam),
+            },
+        )
+
+    try:
+        services.evaluate_and_submit(attempt, now)
+    except DatabaseError:
+        logger.exception("Submission failed for attempt %s", attempt.id)
+        messages.error(
+            request,
+            "Your submission could not be saved. Your attempt is still "
+            "open - please try submitting again before time runs out.",
+        )
+        return redirect("attempt_page", attempt_id=attempt.id)
+    messages.success(request, "Your exam has been submitted.")
+    return redirect("attempt_result", attempt_id=attempt.id)
+
+
+@student_required
+def attempt_result(request, attempt_id):
+    attempt = _own_attempt(request, attempt_id)
+    attempt = services.finalize_if_expired(attempt)
+    if not attempt.is_submitted:
+        messages.error(
+            request, "No result yet: this exam has not been submitted."
+        )
+        return redirect("attempt_page", attempt_id=attempt.id)
+    return render(
+        request,
+        "attempts/result.html",
+        {
+            "attempt": attempt,
+            "exam": attempt.exam,
+            "total_marks": services.total_marks(attempt.exam),
+            "passed": services.is_pass(attempt.percentage),
+            "pass_percentage": services.PASS_PERCENTAGE,
+        },
+    )
