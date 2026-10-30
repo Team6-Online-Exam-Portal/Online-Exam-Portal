@@ -5,10 +5,12 @@ from accounts import views as account_views
 urlpatterns = [
     path("admin/", admin.site.urls),
 
-    # Authentication and dashboards
+    # Authentication
     path("register/", account_views.register, name="register"),
     path("login/", account_views.login_view, name="login"),
     path("logout/", account_views.logout_view, name="logout"),
+
+    # Dashboards
     path("dashboard/", account_views.dashboard, name="dashboard"),
     path(
         "student/dashboard/",
@@ -21,7 +23,7 @@ urlpatterns = [
         name="instructor_dashboard",
     ),
 
-    # FR-3 and FR-4: Question and Exam Management
+    # FR-3 and FR-4: Questions and Exam Management
     path("", include("exams.urls")),
 
     # FR-5: Exam Attempts

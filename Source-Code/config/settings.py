@@ -7,24 +7,38 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Security configuration
+# --------------------------------------------------
+# Security settings
+# --------------------------------------------------
+
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY")
 
 DEBUG = os.environ.get("DJANGO_DEBUG", "True").lower() == "true"
 
 if not SECRET_KEY:
-    if DEBUG:
-        SECRET_KEY = "django-insecure-development-only-key"
-    else:
-        raise ValueError("DJANGO_SECRET_KEY must be set in production.")
+    if not DEBUG:
+        raise RuntimeError(
+            "DJANGO_SECRET_KEY must be set when DEBUG is disabled."
+        )
+    SECRET_KEY = "local-development-only-insecure-key"
 
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.environ.get("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+    for host in os.environ.get(
+        "DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1"
+    ).split(",")
     if host.strip()
 ]
 
-# Application definition
+if not DEBUG and "*" in ALLOWED_HOSTS:
+    raise RuntimeError(
+        "Wildcard ALLOWED_HOSTS is not allowed in production."
+    )
+
+# --------------------------------------------------
+# Applications
+# --------------------------------------------------
+
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -38,6 +52,10 @@ INSTALLED_APPS = [
     "results",
 ]
 
+# --------------------------------------------------
+# Middleware
+# --------------------------------------------------
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
@@ -49,6 +67,10 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "config.urls"
+
+# --------------------------------------------------
+# Templates
+# --------------------------------------------------
 
 TEMPLATES = [
     {
@@ -65,11 +87,17 @@ TEMPLATES = [
     },
 ]
 
+# --------------------------------------------------
 # WSGI / ASGI
+# --------------------------------------------------
+
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
+# --------------------------------------------------
 # Database
+# --------------------------------------------------
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
@@ -77,54 +105,95 @@ DATABASES = {
     }
 }
 
-# Custom user model
-AUTH_USER_MODEL = "accounts.User"
-
+# --------------------------------------------------
 # Password validation
+# --------------------------------------------------
+
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "UserAttributeSimilarityValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "MinimumLengthValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "CommonPasswordValidator"
+        ),
     },
     {
-        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation."
+            "NumericPasswordValidator"
+        ),
     },
 ]
 
+# --------------------------------------------------
 # Internationalization
+# --------------------------------------------------
+
 LANGUAGE_CODE = "en-us"
 TIME_ZONE = "Asia/Kolkata"
 USE_I18N = True
 USE_TZ = True
 
-# Session configuration
+# --------------------------------------------------
+# Static files
+# --------------------------------------------------
+
+STATIC_URL = "static/"
+
+# --------------------------------------------------
+# Default primary key
+# --------------------------------------------------
+
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# --------------------------------------------------
+# Custom user model and authentication
+# --------------------------------------------------
+
+AUTH_USER_MODEL = "accounts.User"
+LOGIN_URL = "login"
+
+# Session lifetime: 30 minutes
 SESSION_COOKIE_AGE = 1800
 SESSION_SAVE_EVERY_REQUEST = True
 
-# Login URL
-LOGIN_URL = "login"
+# --------------------------------------------------
+# Browser, session and CSRF security
+# --------------------------------------------------
 
-# Security headers and cookies
 SESSION_COOKIE_HTTPONLY = True
 CSRF_COOKIE_HTTPONLY = True
+
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
+
 X_FRAME_OPTIONS = "DENY"
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 
-# HTTPS settings (enable in production through environment variables)
-SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "False").lower() == "true"
-SESSION_COOKIE_SECURE = os.environ.get("DJANGO_SESSION_COOKIE_SECURE", "False").lower() == "true"
-CSRF_COOKIE_SECURE = os.environ.get("DJANGO_CSRF_COOKIE_SECURE", "False").lower() == "true"
+# --------------------------------------------------
+# HTTPS security settings
+# --------------------------------------------------
 
-# Static files
-STATIC_URL = "static/"
+SECURE_SSL_REDIRECT = (
+    os.environ.get("DJANGO_SECURE_SSL_REDIRECT", "False").lower() == "true"
+)
 
-# Default primary key field type
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+SESSION_COOKIE_SECURE = (
+    os.environ.get("DJANGO_SESSION_COOKIE_SECURE", "False").lower() == "true"
+)
+
+CSRF_COOKIE_SECURE = (
+    os.environ.get("DJANGO_CSRF_COOKIE_SECURE", "False").lower() == "true"
+)
