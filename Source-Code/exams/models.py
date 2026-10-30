@@ -5,6 +5,7 @@ from django.conf import settings
 
 class Question(models.Model):
     question_text = models.TextField()
+    marks = models.PositiveIntegerField(default=1)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
@@ -42,6 +43,13 @@ class Exam(models.Model):
     duration_minutes = models.PositiveIntegerField()
     is_published = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    @property
+    def total_marks(self):
+        return sum(
+            exam_question.marks
+            for exam_question in self.exam_questions.all()
+        )
 
     def __str__(self):
         return self.title

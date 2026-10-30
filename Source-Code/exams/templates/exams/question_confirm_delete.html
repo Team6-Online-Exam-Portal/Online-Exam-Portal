@@ -1,0 +1,29 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delete MCQ Question</title>
+</head>
+<body>
+    <h1>Delete MCQ Question</h1>
+
+    <p>Are you sure you want to delete this question?</p>
+
+    <blockquote>
+        {{ question.question_text }}
+    </blockquote>
+
+    <p>This action cannot be undone.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Yes, Delete Question</button>
+    </form>
+
+    <p>
+        <a href="{% url 'question_list' %}">Cancel</a>
+    </p>
+</body>
+</html>
