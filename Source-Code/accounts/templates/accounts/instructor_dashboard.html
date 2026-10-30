@@ -14,6 +14,13 @@
         <p>Email: {{ request.user.email }}</p>
         <p>Here you will be able to create and manage exams.</p>
 
+        <!-- FR-4: Exam Scheduling and Management -->
+        <h2>Exam Management</h2>
+        <p>
+            <a href="{% url 'exam_list' %}">Manage Exams</a>
+        </p>
+
+        <!-- FR-3: MCQ Question Management -->
         <h2>Question Management</h2>
         <p>
             <a href="{% url 'question_list' %}">

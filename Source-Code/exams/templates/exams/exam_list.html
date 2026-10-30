@@ -1,0 +1,74 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Exams</title>
+</head>
+<body>
+    <h1>Manage Exams</h1>
+
+    {% if messages %}
+        {% for message in messages %}
+            <p>{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+
+    <p>
+        <a href="{% url 'exam_create' %}">Create New Exam</a>
+    </p>
+
+    {% if exams %}
+        <table border="1" cellpadding="8">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Duration (minutes)</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for exam in exams %}
+                    <tr>
+                        <td>{{ exam.title }}</td>
+                        <td>{{ exam.start_time }}</td>
+                        <td>{{ exam.end_time }}</td>
+                        <td>{{ exam.duration_minutes }}</td>
+                        <td>
+                            {% if exam.is_published %}
+                                Published
+                            {% else %}
+                                Draft
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if not exam.attempts.exists %}
+                                <a href="{% url 'exam_update' exam.pk %}">Edit</a>
+                                |
+                                <a href="{% url 'exam_delete' exam.pk %}">Delete</a>
+                            {% else %}
+                                Cannot edit or delete
+                            {% endif %}
+
+                            {% if not exam.is_published %}
+                                <form method="post" action="{% url 'exam_publish' exam.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit">Publish</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No exams created yet.</p>
+    {% endif %}
+
+    <p><a href="{% url 'instructor_dashboard' %}">Back to Dashboard</a></p>
+</body>
+</html>
