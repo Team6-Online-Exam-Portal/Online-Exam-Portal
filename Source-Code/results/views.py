@@ -13,6 +13,8 @@ def student_history(request):
         Attempt.objects
         .filter(student=request.user, submitted_at__isnull=False)
         .select_related("exam")
+        # exam.total_marks sums exam_questions: load them once, not per row
+        .prefetch_related("exam__exam_questions")
         .order_by("-submitted_at")
     )
 
@@ -56,9 +58,15 @@ def question_review(request, attempt_id):
     review_rows = []
 
     for response in responses:
-        correct_option = response.exam_question.question.options.filter(
-            is_correct=True
-        ).first()
+        # options are prefetched above: choose in Python, no query per row
+        correct_option = next(
+            (
+                option
+                for option in response.exam_question.question.options.all()
+                if option.is_correct
+            ),
+            None,
+        )
 
         review_rows.append({
             "question": response.exam_question.question,
@@ -78,7 +86,7 @@ def question_review(request, attempt_id):
 @instructor_required
 def instructor_exam_report(request, exam_id):
     exam = get_object_or_404(
-        Exam,
+        Exam.objects.prefetch_related("exam_questions"),
         pk=exam_id,
         created_by=request.user,
     )

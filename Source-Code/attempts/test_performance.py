@@ -165,3 +165,67 @@ class AttemptQueryTests(PerformanceBase):
         exam = self.make_exam(50, title="Fifty")
         attempt = self.start(exam)
         self.count_queries(reverse("attempt_page", args=[attempt.id]))
+
+
+class ResultsQueryTests(PerformanceBase):
+    """FR-7 pages: the query count must not grow with the number of rows."""
+
+    def submit(self, student, exam, answer_all=False):
+        attempt = Attempt.objects.create(student=student, exam=exam)
+        Attempt.objects.filter(pk=attempt.pk).update(
+            submitted_at=timezone.now(), score=1, percentage="50.00"
+        )
+        if answer_all:
+            for eq in exam.exam_questions.select_related("question"):
+                Response.objects.create(
+                    attempt=attempt, exam_question=eq,
+                    selected_option=eq.question.options.first(),
+                )
+        return attempt
+
+    def test_student_history_query_count_does_not_grow_with_attempts(self):
+        self.submit(self.student, self.make_exam(2, title="First"))
+        small = self.count_queries(reverse("student_history"))
+        for n in range(15):
+            self.submit(self.student, self.make_exam(2, title=f"Extra {n}"))
+        large = self.count_queries(reverse("student_history"))
+        self.assertEqual(small, large)
+
+    def test_instructor_report_query_count_does_not_grow_with_attempts(self):
+        exam = self.make_exam(2, title="Reported")
+        self.submit(self.student, exam)
+        url = reverse("instructor_exam_report", args=[exam.id])
+        small = self.count_queries(url, self.instructor)
+        for n in range(15):
+            extra = User.objects.create_user(
+                username=f"perf_extra{n}", email=f"perf_extra{n}@example.com",
+                password="Passw0rd!x", role=User.Role.STUDENT,
+            )
+            self.submit(extra, exam)
+        large = self.count_queries(url, self.instructor)
+        self.assertEqual(small, large)
+
+    def test_question_review_query_count_is_independent_of_exam_size(self):
+        small_exam = self.make_exam(3, title="Small", start=-120, end=-60)
+        small_attempt = self.submit(self.student, small_exam, answer_all=True)
+        small = self.count_queries(
+            reverse("question_review", args=[small_attempt.id])
+        )
+        big_exam = self.make_exam(50, title="Big", start=-120, end=-60)
+        big_attempt = self.submit(self.student, big_exam, answer_all=True)
+        large = self.count_queries(
+            reverse("question_review", args=[big_attempt.id])
+        )
+        self.assertEqual(small, large)
+
+    def test_review_still_shows_your_answer_and_the_correct_one(self):
+        exam = self.make_exam(2, title="Review", start=-120, end=-60)
+        attempt = self.submit(self.student, exam, answer_all=True)
+        self.client.force_login(self.student)
+        response = self.client.get(
+            reverse("question_review", args=[attempt.id])
+        )
+        rows = response.context["review_rows"]
+        self.assertEqual(len(rows), 2)
+        for row in rows:
+            self.assertTrue(row["correct_option"].is_correct)
