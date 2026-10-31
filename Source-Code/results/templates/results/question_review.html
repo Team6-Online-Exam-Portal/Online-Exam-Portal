@@ -1,0 +1,55 @@
+
+{% extends "base.html" %}
+
+{% block title %}Question Review{% endblock %}
+
+{% block content %}
+<h2>Question Review</h2>
+
+<h3>{{ attempt.exam.title }}</h3>
+
+<p>
+    Your Score: {{ attempt.score }} /
+    {{ attempt.exam.total_marks }}
+</p>
+
+{% for row in review_rows %}
+    <hr>
+
+    <h3>Question {{ forloop.counter }}</h3>
+
+    <p>{{ row.question.question_text }}</p>
+
+    <p>
+        <strong>Your Answer:</strong>
+        {% if row.selected_option %}
+            {{ row.selected_option.option_text }}
+        {% else %}
+            Not answered
+        {% endif %}
+    </p>
+
+    <p>
+        <strong>Correct Answer:</strong>
+        {% if row.correct_option %}
+            {{ row.correct_option.option_text }}
+        {% else %}
+            Not available
+        {% endif %}
+    </p>
+
+    {% if row.is_correct %}
+        <p>Correct</p>
+    {% else %}
+        <p>Incorrect</p>
+    {% endif %}
+{% empty %}
+    <p>No responses were recorded for this attempt.</p>
+{% endfor %}
+
+<p>
+    <a href="{% url 'student_history' %}">
+        Back to Exam History
+    </a>
+</p>
+{% endblock %}
