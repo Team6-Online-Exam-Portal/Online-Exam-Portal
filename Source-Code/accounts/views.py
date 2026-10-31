@@ -147,4 +147,14 @@ def student_dashboard(request):
 
 @role_required(User.Role.INSTRUCTOR)
 def instructor_dashboard(request):
-    return render(request, "accounts/instructor_dashboard.html")
+    from exams.models import Exam
+
+    exams = Exam.objects.filter(
+        created_by=request.user
+    ).order_by("-created_at")
+
+    return render(
+        request,
+        "accounts/instructor_dashboard.html",
+        {"exams": exams},
+    )

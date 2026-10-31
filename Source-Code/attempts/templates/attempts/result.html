@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+
+{% block title %}Result | {{ exam.title }}{% endblock %}
+
+{% block content %}
+<h2>Result: {{ exam.title }}</h2>
+<ul>
+    <li>Score: {{ attempt.score }} / {{ total_marks }}</li>
+    <li>Percentage: {{ attempt.percentage }}%</li>
+    <li>Status: {% if passed %}Pass{% else %}Fail{% endif %} (pass mark {{ pass_percentage }}%)</li>
+    <li>Submitted: {{ attempt.submitted_at|date:"d M Y, H:i" }}</li>
+</ul>
+<p><a href="{% url 'student_dashboard' %}">Back to dashboard</a></p>
+{% endblock %}

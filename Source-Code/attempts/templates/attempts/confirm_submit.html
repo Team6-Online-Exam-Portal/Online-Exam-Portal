@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Confirm submission | {{ exam.title }}{% endblock %}
+
+{% block content %}
+<h2>Submit {{ exam.title }}?</h2>
+{% if unanswered %}
+<p><strong>You have {{ unanswered }} unanswered question{{ unanswered|pluralize }}</strong>
+   out of {{ total_questions }}.</p>
+{% else %}
+<p>You have answered all {{ total_questions }} questions.</p>
+{% endif %}
+<p>After you submit you cannot change your answers.</p>
+
+<form method="post" action="{% url 'attempt_submit' attempt.id %}">
+    {% csrf_token %}
+    <button type="submit">Yes, submit my exam</button>
+    <a href="{% url 'attempt_page' attempt.id %}">No, go back to the exam</a>
+</form>
+{% endblock %}
