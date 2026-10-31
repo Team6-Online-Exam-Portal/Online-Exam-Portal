@@ -1,37 +1,20 @@
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Instructor Dashboard | Online Exam Portal</title>
-</head>
-<body>
-    <main>
-        <h1>Instructor Dashboard</h1>
+{% block title %}Instructor Dashboard | Online Exam Portal{% endblock %}
 
-        <p>Welcome, {{ request.user.username }}!</p>
-        <p>Email: {{ request.user.email }}</p>
-        <p>Here you will be able to create and manage exams.</p>
+{% block content %}
+<h1>Instructor Dashboard</h1>
+<p>Welcome, {{ request.user.username }}!</p>
 
-        <!-- FR-4: Exam Scheduling and Management -->
-        <h2>Exam Management</h2>
-        <p>
-            <a href="{% url 'exam_list' %}">Manage Exams</a>
-        </p>
+<div class="card">
+    <h2>Exam Management</h2>
+    <p>Create, schedule and publish exams.</p>
+    <a class="btn" href="{% url 'exam_list' %}">Manage Exams</a>
+</div>
 
-        <!-- FR-3: MCQ Question Management -->
-        <h2>Question Management</h2>
-        <p>
-            <a href="{% url 'question_list' %}">
-                Manage MCQ Questions
-            </a>
-        </p>
-
-        <form method="post" action="{% url 'logout' %}">
-            {% csrf_token %}
-            <button type="submit">Logout</button>
-        </form>
-    </main>
-</body>
-</html>
+<div class="card">
+    <h2>Question Management</h2>
+    <p>Build your bank of multiple-choice questions.</p>
+    <a class="btn" href="{% url 'question_list' %}">Manage MCQ Questions</a>
+</div>
+{% endblock %}

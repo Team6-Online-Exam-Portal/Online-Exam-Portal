@@ -260,7 +260,7 @@ def question_create(request):
 
             messages.success(
                 request,
-                "MCQ question created successfully.",
+                "Question created successfully.",
             )
             return redirect("question_list")
 

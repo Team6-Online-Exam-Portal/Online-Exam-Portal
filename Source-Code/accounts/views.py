@@ -71,7 +71,7 @@ def register(request):
 
                 messages.success(
                     request,
-                    "Registration successful. You can now log in.",
+                    "Account created successfully. You can now log in.",
                 )
                 return redirect("login")
 
@@ -86,18 +86,28 @@ def register(request):
     return render(request, "accounts/register.html", {"form": form})
 
 
+class LoginForm(AuthenticationForm):
+    """Login form with the SRS wording (FR-2): the same generic message for
+    a wrong password and an unknown email, so neither is revealed."""
+
+    error_messages = {
+        "invalid_login": "Invalid email or password.",
+        "inactive": "This account is inactive.",
+    }
+
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect("dashboard")
 
     if request.method == "POST":
-        form = AuthenticationForm(request, data=request.POST)
+        form = LoginForm(request, data=request.POST)
 
         if form.is_valid():
             login(request, form.get_user())
             return redirect("dashboard")
     else:
-        form = AuthenticationForm(request)
+        form = LoginForm(request)
 
     return render(request, "accounts/login.html", {"form": form})
 

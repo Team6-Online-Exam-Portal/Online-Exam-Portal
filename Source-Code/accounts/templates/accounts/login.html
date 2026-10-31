@@ -1,40 +1,15 @@
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login | Online Exam Portal</title>
-</head>
-<body>
-    <main>
-        <h1>Login to your account</h1>
+{% block title %}Login | Online Exam Portal{% endblock %}
 
-        {% if messages %}
-            {% for message in messages %}
-                <p>{{ message }}</p>
-            {% endfor %}
-        {% endif %}
+{% block content %}
+<h1>Login to your account</h1>
 
-        <form method="post">
-            {% csrf_token %}
-            {{ form.non_field_errors }}
+<form method="post" class="card" novalidate>
+    {% csrf_token %}
+    {% include "partials/form_fields.html" %}
+    <button type="submit">Login</button>
+</form>
 
-            {% for field in form %}
-                <div>
-                    {{ field.label_tag }}
-                    {{ field }}
-                    {% for error in field.errors %}
-                        <p>{{ error }}</p>
-                    {% endfor %}
-                </div>
-            {% endfor %}
-
-            <button type="submit">Login</button>
-        </form>
-
-        <p>Don't have an account? <a href="{% url 'register' %}">Register</a></p>
-    </main>
-</body>
-</html>
-
+<p>Don't have an account? <a href="{% url 'register' %}">Register</a></p>
+{% endblock %}

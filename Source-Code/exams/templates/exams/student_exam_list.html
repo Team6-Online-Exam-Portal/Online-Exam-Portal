@@ -1,43 +1,38 @@
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Available Exams</title>
-</head>
-<body>
-    <h1>Available Exams</h1>
+{% block title %}Available Exams | Online Exam Portal{% endblock %}
 
-    {% if exams %}
-        <table border="1" cellpadding="8">
-            <thead>
-                <tr>
-                    <th>Exam Title</th>
-                    <th>Description</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
-                    <th>Duration (minutes)</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for exam in exams %}
-                    <tr>
-                        <td>{{ exam.title }}</td>
-                        <td>{{ exam.description|default:"No description" }}</td>
-                        <td>{{ exam.start_time }}</td>
-                        <td>{{ exam.end_time }}</td>
-                        <td>{{ exam.duration_minutes }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>No upcoming published exams are available.</p>
-    {% endif %}
+{% block content %}
+<h1>Available Exams</h1>
 
-    <p>
-        <a href="{% url 'student_dashboard' %}">Back to Dashboard</a>
-    </p>
-</body>
-</html>
+{% if exams %}
+<div class="table-wrap">
+    <table class="responsive">
+        <thead>
+            <tr>
+                <th scope="col">Exam Title</th>
+                <th scope="col">Description</th>
+                <th scope="col">Start Time</th>
+                <th scope="col">End Time</th>
+                <th scope="col">Duration (minutes)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exam in exams %}
+            <tr>
+                <td data-label="Exam Title">{{ exam.title }}</td>
+                <td data-label="Description">{{ exam.description|default:"No description" }}</td>
+                <td data-label="Start Time">{{ exam.start_time }}</td>
+                <td data-label="End Time">{{ exam.end_time }}</td>
+                <td data-label="Duration (minutes)">{{ exam.duration_minutes }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+    <p>No upcoming published exams are available.</p>
+{% endif %}
+
+<p><a class="link-btn" href="{% url 'student_dashboard' %}">Back to Dashboard</a></p>
+{% endblock %}

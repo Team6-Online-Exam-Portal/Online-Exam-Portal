@@ -1,0 +1,4 @@
+{% include "partials/form_errors.html" %}
+{% for field in form %}
+    {% if field.is_hidden %}{{ field }}{% else %}{% include "partials/field.html" %}{% endif %}
+{% endfor %}
