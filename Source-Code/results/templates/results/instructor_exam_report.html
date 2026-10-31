@@ -1,0 +1,76 @@
+
+{% extends "base.html" %}
+
+{% block title %}Instructor Exam Report{% endblock %}
+
+{% block content %}
+
+<h2>Instructor Exam Report</h2>
+
+<h3>{{ exam.title }}</h3>
+
+<h3>Exam Statistics</h3>
+
+<table>
+    <tr>
+        <th>Total Attempts</th>
+        <td>{{ statistics.total_attempts }}</td>
+    </tr>
+    <tr>
+        <th>Average Score</th>
+        <td>{{ statistics.average_score|default:"0"|floatformat:2 }}</td>
+    </tr>
+    <tr>
+        <th>Highest Score</th>
+        <td>{{ statistics.highest_score|default:"0" }}</td>
+    </tr>
+    <tr>
+        <th>Lowest Score</th>
+        <td>{{ statistics.lowest_score|default:"0" }}</td>
+    </tr>
+</table>
+
+<h3>Student Results</h3>
+
+{% if attempts %}
+<table>
+    <thead>
+        <tr>
+            <th>Student Name</th>
+            <th>Email</th>
+            <th>Score</th>
+            <th>Percentage</th>
+            <th>Submission Time</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for attempt in attempts %}
+        <tr>
+            <td>
+                {{ attempt.student.get_full_name|default:attempt.student.username }}
+            </td>
+            <td>{{ attempt.student.email }}</td>
+            <td>
+                {{ attempt.score }} / {{ exam.total_marks }}
+            </td>
+            <td>{{ attempt.percentage }}%</td>
+            <td>
+                {{ attempt.submitted_at|date:"d M Y, H:i" }}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% else %}
+<p>No students have submitted this exam yet.</p>
+{% endif %}
+
+<p>
+    <a href="{% url 'instructor_dashboard' %}">
+        Back to Dashboard
+    </a>
+</p>
+
+{% endblock %}
