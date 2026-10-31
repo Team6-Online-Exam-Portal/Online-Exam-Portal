@@ -8,6 +8,8 @@
 
 <h2>Exams</h2>
 
+<p><a class="btn btn-secondary" href="{% url 'student_exam_list' %}">View available exams</a></p>
+
 {% if rows %}
 <div class="table-wrap">
     <table class="responsive">
@@ -32,6 +34,8 @@
                 <td data-label="Action">
                     {% if row.can_start %}
                         <a class="btn" href="{% url 'exam_instructions' row.exam.id %}">{% if row.attempt %}Resume exam{% else %}Start exam{% endif %}</a>
+                    {% elif row.status == "Completed" %}
+                        <a class="btn btn-secondary" href="{% url 'attempt_result' row.attempt.id %}">View result</a>
                     {% elif row.status == "Upcoming" %}
                         <a class="btn btn-secondary" href="{% url 'exam_instructions' row.exam.id %}">View details</a>
                     {% endif %}

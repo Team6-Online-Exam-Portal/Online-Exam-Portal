@@ -15,4 +15,14 @@ urlpatterns = [
         views.save_answer,
         name="attempt_answer",
     ),
+    path(
+        "attempt/<int:attempt_id>/submit/",
+        views.attempt_submit,
+        name="attempt_submit",
+    ),
+    path(
+        "results/<int:attempt_id>/",
+        views.attempt_result,
+        name="attempt_result",
+    ),
 ]

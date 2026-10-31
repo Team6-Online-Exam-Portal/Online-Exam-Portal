@@ -150,6 +150,19 @@ th { background: #eceff4; font-weight: 600; }
 .badge-closed { background: #eceff4; border-color: var(--muted); }
 .badge-completed { background: var(--warning-bg); border-color: var(--warning-border); }
 
+.badge-pass { background: var(--success-bg); border-color: var(--success-border); }
+.badge-fail { background: var(--error-bg); border-color: var(--error-border); }
+
+/* ---------- lists and result summaries ---------- */
+.plain-list { list-style: none; margin: 0 0 0.75rem; padding: 0; }
+.plain-list li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.5rem; padding: 0.5rem 0; border-bottom: 1px solid var(--border); }
+.plain-list li:last-child { border-bottom: 0; }
+.summary { display: grid; grid-template-columns: 1fr; gap: 0; margin: 0 0 1rem; }
+.summary dt { font-weight: 600; color: var(--muted); font-size: 0.9rem; margin-top: 0.5rem; }
+.summary dd { margin: 0; font-size: 1.1rem; }
+.review-item { margin-bottom: 1rem; }
+.review-item h2 { margin-top: 0; }
+
 /* ---------- exam attempt page ---------- */
 .attempt-bar { position: sticky; top: 0; z-index: 10; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0.5rem 0; margin-bottom: 0.5rem; display: flex; flex-wrap: wrap; align-items: center; gap: 0.25rem 1.5rem; }
 .attempt-bar p { margin: 0; }
@@ -172,6 +185,11 @@ th { background: #eceff4; font-weight: 600; }
 }
 
 /* ---------- wider screens ---------- */
+@media (min-width: 40rem) {
+    .summary { grid-template-columns: max-content 1fr; column-gap: 1.5rem; }
+    .summary dt { margin-top: 0; padding: 0.35rem 0; }
+    .summary dd { padding: 0.35rem 0; }
+}
 @media (min-width: 48rem) {
     h1 { font-size: 1.75rem; }
     .main-nav { flex-basis: auto; }

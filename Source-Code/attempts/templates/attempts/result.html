@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block title %}Result | {{ exam.title }}{% endblock %}
+
+{% block content %}
+<h1>Result: {{ exam.title }}</h1>
+<div class="card">
+    <dl class="summary">
+        <dt>Score</dt><dd>{{ attempt.score }} / {{ total_marks }}</dd>
+        <dt>Percentage</dt><dd>{{ attempt.percentage }}%</dd>
+        <dt>Status</dt><dd><span class="badge {% if passed %}badge-pass{% else %}badge-fail{% endif %}">{% if passed %}Pass{% else %}Fail{% endif %}</span> (pass mark {{ pass_percentage }}%)</dd>
+        <dt>Submitted</dt><dd>{{ attempt.submitted_at|date:"d M Y, H:i" }}</dd>
+    </dl>
+</div>
+<p><a class="btn btn-secondary" href="{% url 'student_dashboard' %}">Back to dashboard</a></p>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block title %}Review Unavailable{% endblock %}
+
+{% block content %}
+<h1>Answer Review Unavailable</h1>
+
+<p>
+    The answer review for <strong>{{ exam.title }}</strong>
+    will become available after the scheduled exam end time.
+</p>
+<p>Please check again after the exam closes.</p>
+
+<p><a class="btn btn-secondary" href="{% url 'student_history' %}">Back to Exam History</a></p>
+{% endblock %}

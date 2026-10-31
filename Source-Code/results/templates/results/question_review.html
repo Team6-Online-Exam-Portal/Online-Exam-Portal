@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Question Review{% endblock %}
+
+{% block content %}
+<h1>Question Review</h1>
+<h2>{{ attempt.exam.title }}</h2>
+<p>Your Score: {{ attempt.score }} / {{ attempt.exam.total_marks }}</p>
+
+{% for row in review_rows %}
+<section class="card review-item">
+    <h2>Question {{ forloop.counter }}</h2>
+    <p>{{ row.question.question_text }}</p>
+    <p>
+        <strong>Your Answer:</strong>
+        {% if row.selected_option %}
+            {{ row.selected_option.option_text }}
+        {% else %}
+            Not answered
+        {% endif %}
+    </p>
+    <p>
+        <strong>Correct Answer:</strong>
+        {% if row.correct_option %}
+            {{ row.correct_option.option_text }}
+        {% else %}
+            Not available
+        {% endif %}
+    </p>
+    {% if row.is_correct %}
+        <p><span class="badge badge-pass">Correct</span></p>
+    {% else %}
+        <p><span class="badge badge-fail">Incorrect</span></p>
+    {% endif %}
+</section>
+{% empty %}
+    <p>No responses were recorded for this attempt.</p>
+{% endfor %}
+
+<p><a class="btn btn-secondary" href="{% url 'student_history' %}">Back to Exam History</a></p>
+{% endblock %}

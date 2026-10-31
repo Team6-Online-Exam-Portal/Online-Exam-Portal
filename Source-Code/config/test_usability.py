@@ -417,3 +417,94 @@ class MessageConsistencyTests(UsabilityBase):
             {"username": self.student.email, "password": "nope"},
         ).content.decode()
         self.assertIn('class="message message-error" role="alert"', html)
+
+
+class ResultScreenTests(UsabilityBase):
+    """FR-6 and FR-7 screens follow the same layout, tables and messages."""
+
+    def setUp(self):
+        now = timezone.now()
+        self.closed = Exam.objects.create(
+            title="Closed exam", created_by=self.instructor,
+            is_published=True, duration_minutes=30,
+            start_time=now - timedelta(hours=3),
+            end_time=now - timedelta(hours=1),
+        )
+        self.closed_eq = ExamQuestion.objects.create(
+            exam=self.closed, question=self.question, order=1, marks=1
+        )
+        self.done_closed = self.submitted(self.closed)
+        self.done_open = self.submitted(self.exam)
+
+    def submitted(self, exam):
+        from attempts.models import Response
+        attempt = Attempt.objects.create(student=self.student, exam=exam)
+        Attempt.objects.filter(pk=attempt.pk).update(
+            submitted_at=timezone.now(), score=1, percentage="100.00"
+        )
+        Response.objects.create(
+            attempt=attempt,
+            exam_question=exam.exam_questions.get(),
+            selected_option=self.question.options.get(is_correct=True),
+            is_correct=True,
+        )
+        return attempt
+
+    def test_student_result_screens_use_the_shared_layout(self):
+        in_progress = Attempt.objects.create(
+            student=self.student, exam=self.upcoming
+        )
+        self.client.force_login(self.student)
+        pages = [
+            ("attempt_result", [self.done_closed.id]),
+            ("student_history", []),
+            ("question_review", [self.done_closed.id]),   # exam closed
+            ("question_review", [self.done_open.id]),     # review unavailable
+            ("attempt_submit", [in_progress.id]),         # confirmation page
+        ]
+        for name, args in pages:
+            html = self.get(name, *args).content.decode()
+            SharedLayoutTests.assert_layout(
+                self, html, f"{name}{args}", "stu_ui"
+            )
+            self.assertIn("<h1", html, name)
+
+    def test_instructor_report_uses_the_shared_layout(self):
+        self.client.force_login(self.instructor)
+        html = self.get("instructor_exam_report", self.exam.pk).content.decode()
+        SharedLayoutTests.assert_layout(self, html, "report", "ins_ui")
+        self.assertIn("<h1", html)
+
+    def test_result_tables_can_stack_on_a_phone(self):
+        self.client.force_login(self.student)
+        html = self.get("student_history").content.decode()
+        ResponsiveTableTests.assert_stackable(self, html, "student_history")
+        self.client.force_login(self.instructor)
+        html = self.get(
+            "instructor_exam_report", self.exam.pk
+        ).content.decode()
+        ResponsiveTableTests.assert_stackable(self, html, "report")
+
+    def test_result_page_shows_pass_as_a_labelled_badge(self):
+        self.client.force_login(self.student)
+        html = self.get("attempt_result", self.done_closed.id).content.decode()
+        self.assertRegex(html, r'<span class="badge badge-pass">Pass</span>')
+        self.assertIn("1 / 1", html)
+
+    def test_attempt_screens_use_the_same_message_wording(self):
+        """Submit confirmation and refusals read like the other screens."""
+        from attempts.models import Attempt as A
+        self.client.force_login(self.student)
+        fresh = A.objects.create(student=self.student, exam=self.upcoming)
+        ok = self.client.post(
+            reverse("attempt_submit", args=[fresh.id]), follow=True
+        )
+        self.assertEqual(
+            rendered_messages(ok, "success"), ["Exam submitted successfully."]
+        )
+        refused = self.client.post(
+            reverse("exam_start", args=[self.closed.id]), follow=True
+        )
+        for text in rendered_messages(refused, "error"):
+            self.assertRegex(text, r"^[A-Z].*\.$", text)
+        self.assertEqual(len(rendered_messages(refused, "error")), 1)

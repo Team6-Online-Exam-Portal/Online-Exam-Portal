@@ -17,4 +17,20 @@
     <p>Build your bank of multiple-choice questions.</p>
     <a class="btn" href="{% url 'question_list' %}">Manage MCQ Questions</a>
 </div>
+
+<div class="card">
+    <h2>Exam Reports</h2>
+    {% if exams %}
+    <ul class="plain-list">
+        {% for exam in exams %}
+        <li>
+            {{ exam.title }}
+            <a class="btn btn-secondary" href="{% url 'instructor_exam_report' exam.id %}">View report<span class="visually-hidden"> for {{ exam.title }}</span></a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>You have not created any exams yet.</p>
+    {% endif %}
+</div>
 {% endblock %}
