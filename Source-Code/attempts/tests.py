@@ -1,3 +1,6 @@
+from django.contrib import admin
+from .admin import AttemptAdmin, ResponseAdmin
+
 from datetime import timedelta
 
 from django.contrib.auth import get_user_model
@@ -403,3 +406,71 @@ class SaveAnswerTests(AttemptTestBase):
 
     def test_get_not_allowed(self):
         self.assertEqual(self.client.get(self.url).status_code, 405)
+
+class AdminProtectionTests(AttemptTestBase):
+    def setUp(self):
+        self.exam = self.make_exam()
+
+        self.submitted_attempt = Attempt.objects.create(
+            student=self.student,
+            exam=self.exam,
+            submitted_at=timezone.now(),
+        )
+
+        self.eq1 = self.eq(self.exam, 1)
+        self.option1 = self.option(self.eq1, correct=True)
+
+        self.response = Response.objects.create(
+            attempt=self.submitted_attempt,
+            exam_question=self.eq1,
+            selected_option=self.option1,
+        )
+
+        self.attempt_admin = AttemptAdmin(Attempt, admin.site)
+        self.response_admin = ResponseAdmin(Response, admin.site)
+
+        self.request = type("Request", (), {})()
+        self.request.user = User.objects.create_superuser(
+            username="admin",
+            email="admin@example.com",
+            password="AdminPass123!",
+        )
+
+    def test_submitted_attempt_cannot_be_changed(self):
+        self.assertFalse(
+            self.attempt_admin.has_change_permission(
+                self.request, self.submitted_attempt
+            )
+        )
+
+    def test_submitted_attempt_cannot_be_deleted(self):
+        self.assertFalse(
+            self.attempt_admin.has_delete_permission(
+                self.request, self.submitted_attempt
+            )
+        )
+
+    def test_submitted_attempt_fields_are_read_only(self):
+        readonly = self.attempt_admin.get_readonly_fields(
+            self.request, self.submitted_attempt
+        )
+
+        self.assertIn("student", readonly)
+        self.assertIn("exam", readonly)
+        self.assertIn("started_at", readonly)
+        self.assertIn("submitted_at", readonly)
+        self.assertIn("percentage", readonly)
+
+    def test_response_of_submitted_attempt_cannot_be_changed(self):
+        self.assertFalse(
+            self.response_admin.has_change_permission(
+                self.request, self.response
+            )
+        )
+
+    def test_response_of_submitted_attempt_cannot_be_deleted(self):
+        self.assertFalse(
+            self.response_admin.has_delete_permission(
+                self.request, self.response
+            )
+        )
