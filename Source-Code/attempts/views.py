@@ -141,11 +141,24 @@ def save_answer(request, attempt_id):
         if option is None:
             return JsonResponse({"error": "Invalid option."}, status=400)
 
-    with transaction.atomic():
-        Response.objects.update_or_create(
-            attempt=attempt,
-            exam_question=exam_question,
-            defaults={"selected_option": option},
-        )
+    # One UPDATE in the common case (the row exists after the first save);
+    # update_or_create costs an extra SELECT and two savepoints (NFR-01).
+    updated = Response.objects.filter(
+        attempt=attempt, exam_question=exam_question
+    ).update(selected_option=option)
+    if not updated:
+        try:
+            with transaction.atomic():
+                Response.objects.create(
+                    attempt=attempt,
+                    exam_question=exam_question,
+                    selected_option=option,
+                )
+        except IntegrityError:
+            # Two saves for the same question raced; the unique constraint
+            # let only one create through, so update the winner's row.
+            Response.objects.filter(
+                attempt=attempt, exam_question=exam_question
+            ).update(selected_option=option)
     answered = attempt.responses.filter(selected_option__isnull=False).count()
     return JsonResponse({"ok": True, "answered": answered})
