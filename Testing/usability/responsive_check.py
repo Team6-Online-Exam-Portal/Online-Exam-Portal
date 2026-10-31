@@ -74,8 +74,13 @@ AUDIT_JS = """
     const h = el.getBoundingClientRect().height;
     if (h < 43.5) out.small.push(label(el) + ' h=' + Math.round(h));
   });
-  document.querySelectorAll('input:not([type=hidden]), select, textarea').forEach(el => {
-    if (!visible(el)) return;
+  // The 16 px rule is about fields the user types or picks text in (mobile
+  // browsers zoom into smaller ones). Checkboxes and radio buttons hold no
+  // text, so they are left out; their size is covered by the 44 px target rule.
+  const noText = 'input[type=hidden], input[type=checkbox], input[type=radio], ' +
+                 'input[type=submit], input[type=button]';
+  document.querySelectorAll('input, select, textarea').forEach(el => {
+    if (el.matches(noText) || !visible(el)) return;
     const fs = parseFloat(getComputedStyle(el).fontSize);
     if (fs < 16) out.smallText.push(label(el) + ' ' + fs + 'px');
   });
@@ -127,7 +132,19 @@ class Checker:
         self.goto(page, "/login/")
         page.fill("#id_username", email)
         page.fill("#id_password", password)
-        page.click("button[type=submit]")
+        page.click("main form button[type=submit]")
+        page.wait_for_load_state()
+
+    def submit_form(self, page, server_side=False):
+        """Click the form's own submit button, never the header's Logout.
+
+        server_side=True switches off the browser's required-field check so
+        an empty form reaches the server and its error messages are shown.
+        """
+        if server_side:
+            page.evaluate("document.querySelectorAll('main form')"
+                          ".forEach(f => { f.noValidate = true; })")
+        page.click("main form button[type=submit]")
         page.wait_for_load_state()
 
     def logout(self, page):
@@ -162,7 +179,7 @@ class Checker:
             self.goto(page, "/register/")
             page.fill("#id_username", "u"); page.fill("#id_email", "bad")
             page.fill("#id_password1", "abc"); page.fill("#id_password2", "xyz")
-            page.click("button[type=submit]"); page.wait_for_load_state()
+            self.submit_form(page, server_side=True)
             self.audit(page, "Register error", shot=True)
             near = page.locator(".field:has(#id_email) .field-error").count()
             self.record("Register: error sits inside the field it belongs to",
@@ -174,15 +191,19 @@ class Checker:
             self.goto(page, "/instructor/exams/"); self.audit(page, "Exam list", shot=True)
             self.goto(page, "/instructor/exams/create/")
             self.audit(page, "Exam form", shot=True)
-            page.click("button[type=submit]"); page.wait_for_load_state()
+            self.submit_form(page, server_side=True)
             self.audit(page, "Exam form error", shot=True)
+            self.record("Exam form: stays on the form after an empty submit",
+                        page.url.endswith("/instructor/exams/create/"), page.url)
             self.record("Exam form: error sits inside the field it belongs to",
                         page.locator(".field:has(#id_title) .field-error").count() == 1)
             self.goto(page, "/questions/"); self.audit(page, "Question list", shot=True)
             self.goto(page, "/questions/create/")
             self.audit(page, "Question form", shot=True)
-            page.click("button[type=submit]"); page.wait_for_load_state()
+            self.submit_form(page, server_side=True)
             self.audit(page, "Question form error", shot=True)
+            self.record("Question form: error sits inside the field it belongs to",
+                        page.locator(".field:has(#id_question_text) .field-error").count() == 1)
             self.goto(page, "/questions/")
             edit = page.locator("a:has-text('Delete')").first.get_attribute("href")
             self.goto(page, edit); self.audit(page, "Question delete", shot=True)
@@ -235,6 +256,33 @@ class Checker:
             self.record("Header keeps user name and Logout during the exam",
                         page.locator("header .user-name").count() == 1 and
                         page.locator("header button:has-text('Logout')").count() == 1)
+
+            print("\nSubmit, results and reports (FR-6, FR-7 screens)")
+            page.click("#submit-btn")
+            page.wait_for_url(re.compile(r"/attempt/\d+/submit/"))
+            self.audit(page, "Submit confirmation", shot=True)
+            self.record("Submit asks for confirmation and shows unanswered count",
+                        "unanswered" in page.inner_text("main"),
+                        page.inner_text("main h1"))
+            page.click("button:has-text('Yes, submit my exam')")
+            page.wait_for_url(re.compile(r"/results/\d+/"))
+            self.audit(page, "Result", shot=True)
+            self.record("Result page opens right after submission with a "
+                        "confirmation message",
+                        "Exam submitted successfully." in
+                        page.inner_text(".messages"))
+            self.goto(page, "/student/history/")
+            self.audit(page, "Exam history", shot=True)
+            page.locator("a:has-text('Review Answers')").first.click()
+            page.wait_for_load_state()
+            self.audit(page, "Answer review", shot=True)
+            self.logout(page)
+            self.login(page, INSTRUCTOR)
+            page.locator("a:has-text('View report')").first.click()
+            page.wait_for_load_state()
+            self.audit(page, "Exam report", shot=True)
+            self.record("Exam report lists the submitted attempt",
+                        page.locator("tbody tr").count() >= 1)
 
             self.record("No JavaScript errors on any screen",
                         not self.js_errors, "; ".join(self.js_errors[:3]))

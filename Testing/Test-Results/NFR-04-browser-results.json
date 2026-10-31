@@ -1,0 +1,412 @@
+[
+  {
+    "check": "Login @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Login @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Login @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Register @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Register @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Register @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Login error @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Login error @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Login error @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Wrong password and unknown email give the same message",
+    "detail": "Error:\nInvalid email or password.",
+    "ok": true
+  },
+  {
+    "check": "Register error @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Register error @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Register error @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Register: error sits inside the field it belongs to",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Instructor dashboard @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Instructor dashboard @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Instructor dashboard @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam list @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam list @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam list @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam form @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam form @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam form @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam form error @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam form error @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam form error @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam form: stays on the form after an empty submit",
+    "detail": "http://127.0.0.1:8000/instructor/exams/create/",
+    "ok": true
+  },
+  {
+    "check": "Exam form: error sits inside the field it belongs to",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Question list @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Question list @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Question list @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Question form @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Question form @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Question form @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Question form error @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Question form error @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Question form error @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Question form: error sits inside the field it belongs to",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Question delete @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Question delete @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Question delete @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam delete @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam delete @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam delete @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Student dashboard @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Student dashboard @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Student dashboard @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Upcoming exams @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Upcoming exams @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Upcoming exams @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam instructions @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam instructions @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam instructions @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Student reaches the attempt page within 3 clicks of logging in (UT_42)",
+    "detail": "2 clicks",
+    "ok": true
+  },
+  {
+    "check": "Exam attempt @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam attempt @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam attempt @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Countdown timer runs",
+    "detail": "59:58 -> 59:56",
+    "ok": true
+  },
+  {
+    "check": "Selecting an answer saves it",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Next and Previous change the question",
+    "detail": "Question 2 of 5 (1 mark) / Question 1 of 5 (1 mark)",
+    "ok": true
+  },
+  {
+    "check": "Navigator jumps to a question",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Answer is kept after reload",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Header keeps user name and Logout during the exam",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Submit confirmation @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Submit confirmation @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Submit confirmation @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Submit asks for confirmation and shows unanswered count",
+    "detail": "Submit Load Test Exam?",
+    "ok": true
+  },
+  {
+    "check": "Result @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Result @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Result @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Result page opens right after submission with a confirmation message",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam history @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam history @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam history @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Answer review @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Answer review @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Answer review @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam report @ phone-360",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam report @ tablet-768",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam report @ desktop-1280",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "Exam report lists the submitted attempt",
+    "detail": "",
+    "ok": true
+  },
+  {
+    "check": "No JavaScript errors on any screen",
+    "detail": "",
+    "ok": true
+  }
+]
