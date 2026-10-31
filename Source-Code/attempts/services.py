@@ -6,7 +6,7 @@ here so it can be unit-tested without HTTP.
 from decimal import ROUND_HALF_UP, Decimal
 
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Count, Sum
 from django.utils import timezone
 
 from exams.models import Exam
@@ -49,11 +49,20 @@ def exam_status(exam, attempt=None, now=None):
 def dashboard_rows(student, now=None):
     """Published exams for the student dashboard, soonest first."""
     now = now or timezone.now()
+    # Score attempts whose time ran out while the browser was closed (FR-6).
+    # One query when nothing has expired.
     finalize_expired_attempts(
         Attempt.objects.filter(student=student), now
     )
+    # One query for exams, with question count and total marks computed by
+    # the database, instead of two extra queries per exam (NFR-01).
     exams = list(
-        Exam.objects.filter(is_published=True).order_by("start_time", "id")
+        Exam.objects.filter(is_published=True)
+        .annotate(
+            num_questions=Count("exam_questions"),
+            marks_sum=Sum("exam_questions__marks"),
+        )
+        .order_by("start_time", "id")
     )
     attempts = {
         a.exam_id: a
@@ -69,8 +78,8 @@ def dashboard_rows(student, now=None):
                 "exam": exam,
                 "attempt": attempt,
                 "status": status,
-                "total_marks": total_marks(exam),
-                "question_count": question_count(exam),
+                "total_marks": exam.marks_sum or 0,
+                "question_count": exam.num_questions,
                 "can_start": status == OPEN,
             }
         )

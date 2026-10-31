@@ -30,7 +30,7 @@
                 <td data-label="Status">{% if exam.is_published %}Published{% else %}Draft{% endif %}</td>
                 <td data-label="Actions">
                     <div class="actions">
-                        {% if not exam.attempts.exists %}
+                        {% if not exam.has_attempts %}
                             <a class="btn btn-secondary" href="{% url 'exam_update' exam.pk %}">Edit</a>
                             <a class="btn btn-secondary" href="{% url 'exam_delete' exam.pk %}">Delete</a>
                         {% else %}

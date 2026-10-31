@@ -102,6 +102,20 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
+        "OPTIONS": {
+            # NFR-01: several students write answers at the same time.
+            # WAL lets readers and the one writer work together, a busy
+            # timeout makes a writer wait instead of failing with "database
+            # is locked", and IMMEDIATE takes the write lock when a
+            # transaction starts so two writers queue up instead of
+            # deadlocking. Needs Django 5.1 or newer.
+            "timeout": 20,
+            "init_command": (
+                "PRAGMA journal_mode=WAL;"
+                "PRAGMA synchronous=NORMAL;"
+            ),
+            "transaction_mode": "IMMEDIATE",
+        },
     }
 }
 
