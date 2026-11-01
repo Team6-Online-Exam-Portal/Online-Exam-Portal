@@ -4,7 +4,7 @@ SRS reference: NFR-4 (section 6.4). Issue #11. Test Plan cases UT_40 to UT_43. B
 
 | SRS 6.4 requirement | Test Plan | Result | Status |
 |---|---|---|---|
-| Works in current Chrome and Firefox with no plugins | UT_40 | Chromium 153: 82 of 82 browser checks pass, no JavaScript errors. **Firefox: not run** (see "Firefox check") | Chrome met, Firefox open |
+| Works in current Chrome and Firefox with no plugins | UT_40 | Chromium 153: 82 of 82 browser checks pass, no JavaScript errors. Firefox 157.0: 82 of 82 browser checks pass, no JavaScript errors. Tested on 01-Nov-2026 by Prakash. | Met |
 | Layouts usable from 360 px width upward | UT_41 | Every screen checked at 360, 768 and 1280 px: no sideways scrolling, nothing sticking out, touch targets 44 px or more, typed-text fields 16 px or more | Met |
 | A Student can open and start an available exam within 3 clicks of logging in | UT_42 | 2 clicks (Start exam on the dashboard, Start exam on the instructions page) | Met |
 | Error and confirmation messages use a consistent style and wording on every screen | UT_43 | One message component for every screen; one wording pattern; same message for wrong password and unknown email | Met |
@@ -46,9 +46,13 @@ Deviations 15 to 18 are logged in `Deviations.md`.
 3. "3 clicks" is counted after logging in; the login form already lands on the dashboard.
 4. During this work the check script was found to click the header's Logout button instead of the form's own button once the shared header existed. It now clicks the button inside `main`; the Django tests and the 82 browser checks above were run after that fix.
 
-## Firefox check (open item, UT_40)
+## Firefox check (completed, UT_40)
 
-Firefox is not installed where this was built, so the Firefox half of UT_40 is not done. A team member can close it in about 5 minutes: either run the command above with `--browser firefox` (expected: all checks pass), or open the app in Firefox and check by hand: log in as a student, open the dashboard, start an exam, answer, move with Next/Previous/navigator, submit, and confirm each screen has no sideways scrolling at a 360 px wide window (Responsive Design Mode, Ctrl+Shift+M). Record the result here and in the Test Plan. The stylesheet uses only features that Firefox supports (flexbox, grid, `:focus-visible`, custom properties).
+Firefox 157.0 was installed and tested using Playwright. Ran `python ../Testing/usability/responsive_check.py --browser firefox` from `Source-Code`.
+
+**Result: 82 of 82 browser checks passed.** All screens passed at 360, 768 and 1280 px. Login, registration, student and instructor screens, exam flow, submission, results and navigation passed with no JavaScript errors.
+
+Tested on 01-Nov-2026 by Prakash.
 
 ## Known limits
 
