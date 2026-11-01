@@ -2,19 +2,8 @@
 
 {% block title %}{{ exam.title }} | Attempt{% endblock %}
 
-{% block extra_head %}
-<style>
-    .question { display: none; }
-    .question.active { display: block; }
-    .opt { display: block; margin: 8px 0; }
-    #navigator { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0; }
-    .nav-btn { min-width: 40px; min-height: 40px; }
-    .nav-btn.answered { background: #cfe8cf; }
-    .nav-btn.current { outline: 3px solid #333; }
-    #timer { font-size: 1.4em; }
-    #timer.low { color: #b00020; }
-</style>
-{% endblock %}
+{# Styles for this page live in partials/styles.html #}
+{% block site_nav %}{% endblock %}
 
 {% block content %}
 <div id="attempt"
@@ -23,10 +12,12 @@
      data-csrf="{{ csrf_token }}"
      data-submit-url="{% url 'attempt_submit' attempt.id %}">
 
-    <h2>{{ exam.title }}</h2>
-    <p>Time left: <strong id="timer" aria-live="off">--:--</strong></p>
-    <p>Answered: <span id="answered-count">{{ answered_count }}</span> / {{ questions|length }}</p>
-    <p id="save-status" role="status"></p>
+    <h1>{{ exam.title }}</h1>
+    <div class="attempt-bar">
+        <p>Time left: <strong id="timer" aria-live="off">--:--</strong></p>
+        <p>Answered: <span id="answered-count">{{ answered_count }}</span> / {{ questions|length }}</p>
+        <p id="save-status" role="status"></p>
+    </div>
 
     <div id="navigator" aria-label="Question navigator">
         {% for q in questions %}
@@ -44,15 +35,15 @@
             {{ o.text }}
         </label>
         {% endfor %}
-        <button type="button" class="clear-btn">Clear answer</button>
+        <button type="button" class="clear-btn btn-secondary">Clear answer</button>
     </section>
     {% endfor %}
 
-    <p>
-        <button type="button" id="prev-btn">Previous</button>
-        <button type="button" id="next-btn">Next</button>
+    <div class="nav-actions">
+        <button type="button" id="prev-btn" class="btn-secondary">Previous</button>
+        <button type="button" id="next-btn" class="btn-secondary">Next</button>
         <button type="button" id="submit-btn">Submit exam</button>
-    </p>
+    </div>
 
     <form id="auto-submit-form" method="post" action="{% url 'attempt_submit' attempt.id %}">
         {% csrf_token %}

@@ -1,76 +1,50 @@
-
 {% extends "base.html" %}
 
 {% block title %}Instructor Exam Report{% endblock %}
 
 {% block content %}
+<h1>Instructor Exam Report</h1>
+<h2>{{ exam.title }}</h2>
 
-<h2>Instructor Exam Report</h2>
+<h2>Exam Statistics</h2>
+<div class="card">
+    <dl class="summary">
+        <dt>Total Attempts</dt><dd>{{ statistics.total_attempts }}</dd>
+        <dt>Average Score</dt><dd>{{ statistics.average_score|default:"0"|floatformat:2 }}</dd>
+        <dt>Highest Score</dt><dd>{{ statistics.highest_score|default:"0" }}</dd>
+        <dt>Lowest Score</dt><dd>{{ statistics.lowest_score|default:"0" }}</dd>
+    </dl>
+</div>
 
-<h3>{{ exam.title }}</h3>
-
-<h3>Exam Statistics</h3>
-
-<table>
-    <tr>
-        <th>Total Attempts</th>
-        <td>{{ statistics.total_attempts }}</td>
-    </tr>
-    <tr>
-        <th>Average Score</th>
-        <td>{{ statistics.average_score|default:"0"|floatformat:2 }}</td>
-    </tr>
-    <tr>
-        <th>Highest Score</th>
-        <td>{{ statistics.highest_score|default:"0" }}</td>
-    </tr>
-    <tr>
-        <th>Lowest Score</th>
-        <td>{{ statistics.lowest_score|default:"0" }}</td>
-    </tr>
-</table>
-
-<h3>Student Results</h3>
-
+<h2>Student Results</h2>
 {% if attempts %}
-<table>
+<div class="table-wrap">
+<table class="responsive">
     <thead>
         <tr>
-            <th>Student Name</th>
-            <th>Email</th>
-            <th>Score</th>
-            <th>Percentage</th>
-            <th>Submission Time</th>
+            <th scope="col">Student Name</th>
+            <th scope="col">Email</th>
+            <th scope="col">Score</th>
+            <th scope="col">Percentage</th>
+            <th scope="col">Submission Time</th>
         </tr>
     </thead>
-
     <tbody>
         {% for attempt in attempts %}
         <tr>
-            <td>
-                {{ attempt.student.get_full_name|default:attempt.student.username }}
-            </td>
-            <td>{{ attempt.student.email }}</td>
-            <td>
-                {{ attempt.score }} / {{ exam.total_marks }}
-            </td>
-            <td>{{ attempt.percentage }}%</td>
-            <td>
-                {{ attempt.submitted_at|date:"d M Y, H:i" }}
-            </td>
+            <td data-label="Student Name">{{ attempt.student.get_full_name|default:attempt.student.username }}</td>
+            <td data-label="Email">{{ attempt.student.email }}</td>
+            <td data-label="Score">{{ attempt.score }} / {{ exam.total_marks }}</td>
+            <td data-label="Percentage">{{ attempt.percentage }}%</td>
+            <td data-label="Submission Time">{{ attempt.submitted_at|date:"d M Y, H:i" }}</td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
-
+</div>
 {% else %}
 <p>No students have submitted this exam yet.</p>
 {% endif %}
 
-<p>
-    <a href="{% url 'instructor_dashboard' %}">
-        Back to Dashboard
-    </a>
-</p>
-
+<p><a class="btn btn-secondary" href="{% url 'instructor_dashboard' %}">Back to Dashboard</a></p>
 {% endblock %}

@@ -1,0 +1,15 @@
+{# One form field: label, input, help text, and its errors right next to it. #}
+<div class="field{% if field.errors %} has-error{% endif %}">
+    {% if field.widget_type == "checkbox" %}
+        <label class="checkline" for="{{ field.id_for_label }}">{{ field }} <span>{{ field.label }}</span></label>
+    {% else %}
+        {{ field.label_tag }}
+        {{ field }}
+    {% endif %}
+    {% if field.help_text %}<p class="help" id="{{ field.auto_id }}_helptext">{{ field.help_text }}</p>{% endif %}
+    {% if field.errors %}
+    <ul class="field-error" role="alert">
+        {% for error in field.errors %}<li><span class="visually-hidden">Error: </span>{{ error }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+</div>

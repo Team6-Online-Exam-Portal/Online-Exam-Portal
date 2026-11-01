@@ -1,29 +1,19 @@
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delete MCQ Question</title>
-</head>
-<body>
-    <h1>Delete MCQ Question</h1>
+{% block title %}Delete MCQ Question | Online Exam Portal{% endblock %}
 
-    <p>Are you sure you want to delete this question?</p>
+{% block content %}
+<h1>Delete MCQ Question</h1>
 
-    <blockquote>
-        {{ question.question_text }}
-    </blockquote>
+<p>Are you sure you want to delete this question?</p>
 
-    <p>This action cannot be undone.</p>
+<blockquote class="card">{{ question.question_text }}</blockquote>
 
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit">Yes, Delete Question</button>
-    </form>
+<p>This action cannot be undone.</p>
 
-    <p>
-        <a href="{% url 'question_list' %}">Cancel</a>
-    </p>
-</body>
-</html>
+<form method="post" class="actions">
+    {% csrf_token %}
+    <button type="submit" class="btn-danger">Yes, Delete Question</button>
+    <a class="btn btn-secondary" href="{% url 'question_list' %}">Cancel</a>
+</form>
+{% endblock %}

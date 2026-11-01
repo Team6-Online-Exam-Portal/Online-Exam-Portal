@@ -1,21 +1,15 @@
+{% extends "base.html" %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Delete Exam</title>
-</head>
-<body>
-    <h1>Delete Exam</h1>
+{% block title %}Delete Exam | Online Exam Portal{% endblock %}
 
-    <p>Are you sure you want to delete the exam "{{ exam.title }}"?</p>
+{% block content %}
+<h1>Delete Exam</h1>
 
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit">Yes, Delete Exam</button>
-    </form>
+<p>Are you sure you want to delete the exam "{{ exam.title }}"?</p>
 
-    <p><a href="{% url 'exam_list' %}">Cancel</a></p>
-</body>
-</html>
+<form method="post" class="actions">
+    {% csrf_token %}
+    <button type="submit" class="btn-danger">Yes, Delete Exam</button>
+    <a class="btn btn-secondary" href="{% url 'exam_list' %}">Cancel</a>
+</form>
+{% endblock %}

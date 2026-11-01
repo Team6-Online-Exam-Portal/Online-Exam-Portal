@@ -1,66 +1,48 @@
-
 {% extends "base.html" %}
 
 {% block title %}My Exam History{% endblock %}
 
 {% block content %}
-
-<h2>My Exam History</h2>
+<h1>My Exam History</h1>
 
 {% if attempts %}
-<table>
+<div class="table-wrap">
+<table class="responsive">
     <thead>
         <tr>
-            <th>Exam</th>
-            <th>Submission Date</th>
-            <th>Score</th>
-            <th>Percentage</th>
-            <th>Result</th>
-            <th>Review</th>
+            <th scope="col">Exam</th>
+            <th scope="col">Submission Date</th>
+            <th scope="col">Score</th>
+            <th scope="col">Percentage</th>
+            <th scope="col">Result</th>
+            <th scope="col">Review</th>
         </tr>
     </thead>
-
     <tbody>
         {% for attempt in attempts %}
         <tr>
-            <td>{{ attempt.exam.title }}</td>
-
-            <td>
-                {{ attempt.submitted_at|date:"d M Y, H:i" }}
-            </td>
-
-            <td>
-                {{ attempt.score }} / {{ attempt.exam.total_marks }}
-            </td>
-
-            <td>{{ attempt.percentage }}%</td>
-
-            <td>
+            <td data-label="Exam">{{ attempt.exam.title }}</td>
+            <td data-label="Submission Date">{{ attempt.submitted_at|date:"d M Y, H:i" }}</td>
+            <td data-label="Score">{{ attempt.score }} / {{ attempt.exam.total_marks }}</td>
+            <td data-label="Percentage">{{ attempt.percentage }}%</td>
+            <td data-label="Result">
                 {% if attempt.percentage >= 40 %}
-                    Pass
+                    <span class="badge badge-pass">Pass</span>
                 {% else %}
-                    Fail
+                    <span class="badge badge-fail">Fail</span>
                 {% endif %}
             </td>
-
-            <td>
-                <a href="{% url 'question_review' attempt.id %}">
-                    Review Answers
-                </a>
+            <td data-label="Review">
+                <a class="btn btn-secondary" href="{% url 'question_review' attempt.id %}">Review Answers</a>
             </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
-
+</div>
 {% else %}
     <p>You have not submitted any exams yet.</p>
 {% endif %}
 
-<p>
-    <a href="{% url 'student_dashboard' %}">
-        Back to Dashboard
-    </a>
-</p>
-
+<p><a class="btn btn-secondary" href="{% url 'student_dashboard' %}">Back to Dashboard</a></p>
 {% endblock %}

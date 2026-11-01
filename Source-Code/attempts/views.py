@@ -211,10 +211,10 @@ def attempt_submit(request, attempt_id):
         messages.error(
             request,
             "Your submission could not be saved. Your attempt is still "
-            "open - please try submitting again before time runs out.",
+            "open. Please try submitting again before time runs out.",
         )
         return redirect("attempt_page", attempt_id=attempt.id)
-    messages.success(request, "Your exam has been submitted.")
+    messages.success(request, "Exam submitted successfully.")
     return redirect("attempt_result", attempt_id=attempt.id)
 
 
