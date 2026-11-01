@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.db import transaction
+from django.db.models import Exists, OuterRef
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -24,8 +25,11 @@ def exam_has_attempts(exam):
 
 @instructor_required
 def exam_list(request):
+    # has_attempts is computed in the same query (was one query per exam).
     exams = Exam.objects.filter(
         created_by=request.user
+    ).annotate(
+        has_attempts=Exists(Attempt.objects.filter(exam=OuterRef("pk")))
     ).order_by("-created_at")
 
     return render(
@@ -232,9 +236,11 @@ def question_has_attempts(question):
 
 @instructor_required
 def question_list(request):
+    # prefetch_related loads all options in one extra query (was one per
+    # question).
     questions = Question.objects.filter(
         created_by=request.user
-    ).order_by("-created_at")
+    ).prefetch_related("options").order_by("-created_at")
 
     return render(
         request,
