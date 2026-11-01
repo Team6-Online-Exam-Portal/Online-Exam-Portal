@@ -28,4 +28,5 @@ urlpatterns = [
 
     # FR-5: Exam Attempts
     path("", include("attempts.urls")),
+    path("", include("results.urls")),
 ]

@@ -20,7 +20,8 @@
 <div id="attempt"
      data-remaining="{{ remaining_seconds }}"
      data-answer-url="{% url 'attempt_answer' attempt.id %}"
-     data-csrf="{{ csrf_token }}">
+     data-csrf="{{ csrf_token }}"
+     data-submit-url="{% url 'attempt_submit' attempt.id %}">
 
     <h2>{{ exam.title }}</h2>
     <p>Time left: <strong id="timer" aria-live="off">--:--</strong></p>
@@ -50,7 +51,12 @@
     <p>
         <button type="button" id="prev-btn">Previous</button>
         <button type="button" id="next-btn">Next</button>
+        <button type="button" id="submit-btn">Submit exam</button>
     </p>
+
+    <form id="auto-submit-form" method="post" action="{% url 'attempt_submit' attempt.id %}">
+        {% csrf_token %}
+    </form>
 </div>
 
 <script>
@@ -78,9 +84,21 @@
     // Countdown: starts from the remaining time computed by the server and
     // uses a monotonic clock, so the browser's own clock is never trusted.
     var endAt = performance.now() + parseInt(root.dataset.remaining, 10) * 1000;
+    // Saves are chained so they reach the server in order, and submitting
+    // waits for any save still in flight.
+    var saveChain = Promise.resolve();
+
     function onTimeUp() {
-        window.location.reload();
+        statusEl.textContent = 'Time is up. Submitting...';
+        saveChain.then(function () {
+            document.getElementById('auto-submit-form').submit();
+        });
     }
+    document.getElementById('submit-btn').addEventListener('click', function () {
+        saveChain.then(function () {
+            window.location.href = root.dataset.submitUrl;
+        });
+    });
     function tick() {
         var left = Math.max(0, Math.round((endAt - performance.now()) / 1000));
         var m = Math.floor(left / 60), s = left % 60;
@@ -92,12 +110,16 @@
     tick();
 
     function save(panelIndex, optionId) {
+        saveChain = saveChain.then(function () { return doSave(panelIndex, optionId); });
+    }
+
+    function doSave(panelIndex, optionId) {
         var body = new URLSearchParams({
             question: panels[panelIndex].dataset.id,
             option: optionId || ''
         });
         statusEl.textContent = 'Saving...';
-        fetch(root.dataset.answerUrl, {
+        return fetch(root.dataset.answerUrl, {
             method: 'POST',
             headers: {
                 'X-CSRFToken': root.dataset.csrf,

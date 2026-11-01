@@ -1,0 +1,66 @@
+
+{% extends "base.html" %}
+
+{% block title %}My Exam History{% endblock %}
+
+{% block content %}
+
+<h2>My Exam History</h2>
+
+{% if attempts %}
+<table>
+    <thead>
+        <tr>
+            <th>Exam</th>
+            <th>Submission Date</th>
+            <th>Score</th>
+            <th>Percentage</th>
+            <th>Result</th>
+            <th>Review</th>
+        </tr>
+    </thead>
+
+    <tbody>
+        {% for attempt in attempts %}
+        <tr>
+            <td>{{ attempt.exam.title }}</td>
+
+            <td>
+                {{ attempt.submitted_at|date:"d M Y, H:i" }}
+            </td>
+
+            <td>
+                {{ attempt.score }} / {{ attempt.exam.total_marks }}
+            </td>
+
+            <td>{{ attempt.percentage }}%</td>
+
+            <td>
+                {% if attempt.percentage >= 40 %}
+                    Pass
+                {% else %}
+                    Fail
+                {% endif %}
+            </td>
+
+            <td>
+                <a href="{% url 'question_review' attempt.id %}">
+                    Review Answers
+                </a>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% else %}
+    <p>You have not submitted any exams yet.</p>
+{% endif %}
+
+<p>
+    <a href="{% url 'student_dashboard' %}">
+        Back to Dashboard
+    </a>
+</p>
+
+{% endblock %}

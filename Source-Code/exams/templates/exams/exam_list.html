@@ -46,7 +46,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            {% if not exam.attempts.exists %}
+                            {% if not exam.has_attempts %}
                                 <a href="{% url 'exam_update' exam.pk %}">Edit</a>
                                 |
                                 <a href="{% url 'exam_delete' exam.pk %}">Delete</a>
